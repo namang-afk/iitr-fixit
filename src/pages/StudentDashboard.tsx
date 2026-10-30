@@ -21,7 +21,7 @@ export const StudentDashboard: React.FC = () => {
   const { requests } = useRequests();
 
   // Student's personal requests
-  const myRequests = requests.filter(r => r.residentId === currentUser.id);
+  const myRequests = requests.filter(r => r.residentId === (currentUser?.id || ''));
 
   const openCount = myRequests.filter(r => r.status === 'submitted' || r.status === 'under_review').length;
   const inProgressCount = myRequests.filter(r => r.status === 'assigned' || r.status === 'in_progress').length;
@@ -45,10 +45,10 @@ export const StudentDashboard: React.FC = () => {
         <div className="space-y-2 relative z-10">
           <div className="inline-flex items-center gap-1.5 bg-white/15 px-3 py-1 rounded-full text-xs font-semibold text-amber-200">
             <Building className="w-3.5 h-3.5" />
-            <span>{currentUser.hostel} • Room {currentUser.room}</span>
+            <span>{currentUser?.hostel || 'Campus Bhawan'} • Room {currentUser?.room || 'R-314'}</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-display text-white">
-            Welcome back, {currentUser.name}
+            Welcome back, {currentUser?.name || 'Resident'}
           </h1>
           <p className="text-stone-200 text-xs sm:text-sm max-w-xl leading-relaxed">
             Report any electrical, plumbing, carpentry, or network faults in your room. Track active repairs and review technician sign-offs.
@@ -137,7 +137,7 @@ export const StudentDashboard: React.FC = () => {
               </div>
               <h3 className="text-sm font-bold text-stone-900">No open requests for your room</h3>
               <p className="text-xs text-stone-500 max-w-sm mx-auto">
-                Everything in room {currentUser.room} looks good! If you ever notice an issue, tap below to report it.
+                Everything in room {currentUser?.room || 'your room'} looks good! If you ever notice an issue, tap below to report it.
               </p>
               <Link
                 to="/requests/new"

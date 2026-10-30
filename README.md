@@ -10,12 +10,30 @@
 In large residential university campuses like IIT Roorkee—with over 14 student bhawans, married scholar residences, and faculty quarters—traditional room maintenance often relied on paper registers, unrecorded verbal complaints, and manual follow-ups with hostel caretakers.
 
 **IITR FixIt** transforms campus facility operations into an accountable, transparent university SaaS platform:
+- **Institutional Single Sign-On (SSO)**: Users authenticate using their official IIT Roorkee email address (`@iitr.ac.in` or `@*.iitr.ac.in`).
+- **Strict Role-Based Access Control (RBAC)**: Separate authorization levels for **Students / Residents**, **Maintenance Staff**, and **Wardens / Estate Administrators**. Students cannot access warden or staff administrative screens, and vice versa.
 - **Instant Digital Reporting**: Residents log room issues in 60 seconds across 8 specialized trade categories with photo attachments and preferred inspection windows.
 - **Human-Readable Ticket IDs**: Generates sequential readable IDs (e.g., `FIX-2026-001`).
 - **6-Stage Lifecycle Tracking**: Real-time visual progress tracker from `Submitted` → `Under Review` → `Assigned` → `In Progress` → `Resolved` → `Closed`.
-- **Role-Aware Permissions**: Specialized views for **Residents/Students**, **Maintenance Staff**, and **Wardens/Estate Admins**.
 - **Auditable History & Two-Way Dialogue**: Complete status transition timeline, resident-staff communication, and private internal staff work notes.
-- **Zero API Keys Required**: Built-in `localStorage` persistence layer with reactive cross-tab state synchronization and complete preloaded seed data.
+- **Production Server Ready**: Bundled with SPA rewrite rules for **Vercel**, **Netlify**, **Render**, **Nginx**, and **Docker**.
+
+---
+
+## 🔐 Authentication & Strict Role-Based Access Control (RBAC)
+
+The platform enforces campus access boundaries:
+
+| Role | Authorized Email Patterns | Authorized Views | Prohibited Views |
+|---|---|---|---|
+| **Resident / Student** | `*.iitr.ac.in` (e.g. `aarav.sharma@me.iitr.ac.in`) | `/student`, `/dashboard`, `/requests/new`, `/requests`, `/requests/:id`, `/track` | `/warden`, `/admin`, `/staff`, technician reassignment, internal staff notes |
+| **Maintenance Staff** | `*.estate@iitr.ac.in` or `*@iitr.ac.in` (e.g. `rajesh.estate@iitr.ac.in`) | `/staff`, `/dashboard`, `/requests`, `/requests/:id`, `/track` | `/student`, `/warden`, `/admin`, creating complaints (`/requests/new`) |
+| **Warden / Administrator** | `warden.*@iitr.ac.in` or `*@iitr.ac.in` (e.g. `warden.rajendra@iitr.ac.in`) | `/warden`, `/admin`, `/dashboard`, `/requests/new`, `/requests`, `/requests/:id`, `/track` | Cannot act as technician on work queue claim actions |
+
+### Route Protection Architecture
+- All protected routes are wrapped with `<ProtectedRoute allowedRoles={[...]}>`.
+- If an unauthenticated user attempts to access any dashboard or ticket, they are automatically redirected to `/login` with their return target saved in history state.
+- If an authenticated user attempts to access an unauthorized portal (e.g. a student navigating to `/warden` or `/staff`), they receive a clean **403 Access Restricted** page indicating their current session role and the required authorization, along with a 1-click **Switch Account** option.
 
 ---
 
@@ -26,101 +44,132 @@ In large residential university campuses like IIT Roorkee—with over 14 student
 | **Frontend Framework** | React 19 + TypeScript | Type-safe components, functional hooks, strict typings |
 | **Build & Tooling** | Vite 8 + `@tailwindcss/vite` | Sub-second HMR and instant production bundling |
 | **Styling & Design System** | Tailwind CSS v4 + Vanilla CSS | IITR heritage maroon accents (`#7A1528`), warm off-white canvas (`#FAF9F6`), charcoal stone neutrals |
-| **Routing** | React Router v7 (`react-router-dom`) | Declarative client-side routing with clean URL parameters |
+| **Routing** | React Router v7 (`react-router-dom`) | Declarative client-side routing with clean URL parameters and RBAC guards |
 | **Icons & Visuals** | Lucide Icons (`lucide-react`) | Pixel-crisp engineering and facilities iconography |
 | **Data Visualization** | Recharts 3 | Responsive SVG charts for category volume, status donuts, trends, and hostel loads |
 | **Data Layer & Storage** | LocalStorage Service Layer | Event-driven architecture with clean service abstraction ready for backend integration |
+| **Deployment Targets** | Vercel, Netlify, Nginx, Docker | Production configs included (`vercel.json`, `_redirects`, `nginx.conf`, `Dockerfile`) |
 
 ---
 
-## 👥 Demo User Personas & Role Switcher
+## 🌐 Hosting on Production Servers
 
-A persistent **Demo Mode Banner** at the top of the interface allows instant one-click switching between three user perspectives:
-
-1. **Resident / Student (`Aarav Sharma`)**
-   - **Affiliation**: Mechanical & Industrial Engineering (Enrollment: `22115042`)
-   - **Room Location**: Rajendra Bhawan, Wing C, Room `R-314`
-   - **Capabilities**: Submit new tickets, attach room photos, track 6-step progress, message technicians, reopen resolved tickets with a reason, and rate service (1–5 stars).
-
-2. **Maintenance Staff (`Rajesh Kumar`)**
-   - **Affiliation**: Estate & Works — Electrical Maintenance Unit
-   - **Capabilities**: Work queue filterable by *My Assigned Jobs*, *Unassigned Pool*, and *High & Emergency*; claim unassigned jobs; transition to *In Progress*; write private internal technician notes; submit completion reports.
-
-3. **Warden / Estate Administrator (`Dr. P. K. Sen`)**
-   - **Affiliation**: Council of Wardens / Estate Directorate
-   - **Capabilities**: Executive command center, real-time KPI metrics, Recharts visual analytics, priority overrides, technician workload reassignments, hostel management, and CSV report export.
+### Option 1: Vercel (Recommended — 2 Minutes)
+1. Push your repository to GitHub: `https://github.com/namang-afk/iitr-fixit`
+2. Go to [vercel.com](https://vercel.com) and click **"Add New Project"**.
+3. Select your repository `namang-afk/iitr-fixit`.
+4. Framework Preset will auto-detect as **Vite**.
+5. Click **Deploy**.
+> **Note**: SPA rewrites are already configured in [`vercel.json`](./vercel.json).
 
 ---
 
-## 🧭 Routes & Features
-
-| Route | Page | Description |
-|---|---|---|
-| `/` | **Landing Page** | Value proposition, live metrics ticker, 4-step *How It Works*, trade category grid, SLA guarantees, and quick ticket ID lookup. |
-| `/dashboard` | **Role Dashboard** | Role-aware router rendering the **Resident Dashboard**, **Technician Work Queue**, or **Warden Command Center** depending on active persona. |
-| `/requests` | **Requests Directory** | Searchable, multi-filtered list and table view with filters for status, category, priority, hostel, and sort controls. |
-| `/requests/new` | **Submit Request** | Form with category picker, hostel & room selectors, preferred access slots, drag-drop photo upload with sample campus photo presets, and emergency modal triggers. |
-| `/requests/:id` | **Ticket Details** | Full audit timeline, 6-step visual tracker, photo lightbox, role-gated action buttons (Claim, Start, Resolve, Reopen, Rate), and discussion thread. |
-| `/track` | **Quick Tracker** | Direct lookup page to inspect any ticket status without logging in or switching roles. |
+### Option 2: Netlify
+1. Go to [netlify.com](https://app.netlify.com/) and choose **"Import from Git"**.
+2. Select your repository.
+3. Build command: `npm run build`
+4. Publish directory: `dist`
+5. Click **Deploy Site**.
+> **Note**: SPA route redirects are already configured in [`public/_redirects`](./public/_redirects).
 
 ---
 
-## 🗄️ Clean Data Architecture & Backend Migration (Supabase / Postgres)
+### Option 3: VPS / Campus Linux Server (Nginx)
+If hosting on an IIT Roorkee server or Ubuntu/Debian VPS:
+1. Build the production bundle:
+   ```bash
+   npm run build
+   ```
+2. Copy the contents of `dist/` to your web root (e.g. `/var/www/iitr-fixit`):
+   ```bash
+   sudo cp -r dist/* /var/www/iitr-fixit/
+   ```
+3. Copy [`nginx.conf`](./nginx.conf) to `/etc/nginx/sites-available/iitr-fixit`:
+   ```nginx
+   server {
+       listen 80;
+       server_name fixit.iitr.ac.in;
 
-All storage logic is encapsulated within `src/services/storage.ts` and `src/services/requestService.ts`. UI components interact purely through standard typed interfaces:
+       root /var/www/iitr-fixit;
+       index index.html;
 
-```typescript
-// Example: src/types/index.ts
-export interface RequestItem {
-  id: string; // e.g. FIX-2026-001
-  title: string;
-  description: string;
-  category: RequestCategory;
-  priority: RequestPriority;
-  status: RequestStatus;
-  hostel: string;
-  block: string;
-  roomNumber: string;
-  preferredAccessTime: PreferredAccessTime;
-  photos: string[];
-  residentId: string;
-  residentName: string;
-  residentPhone: string;
-  assignedStaffId?: string;
-  assignedStaffName?: string;
-  createdAt: string;
-  timeline: RequestTimelineEvent[];
-  comments: RequestComment[];
-}
-```
-
-### Migrating to Supabase:
-To replace `localStorage` with a real Supabase database:
-1. Create a `requests` and `comments` table in PostgreSQL matching the interface above.
-2. Replace the function bodies in `src/services/requestService.ts`:
-   ```typescript
-   // e.g. In requestService.ts:
-   async getAllRequests(): Promise<RequestItem[]> {
-     const { data, error } = await supabase.from('requests').select('*').order('created_at', { ascending: false });
-     return data;
+       location / {
+           try_files $uri $uri/ /index.html;
+       }
    }
    ```
-3. Enable Supabase Realtime subscriptions in `RequestContext.tsx` for instant push updates across student and staff phones.
+4. Enable the site and restart Nginx:
+   ```bash
+   sudo ln -s /etc/nginx/sites-available/iitr-fixit /etc/nginx/sites-enabled/
+   sudo systemctl restart nginx
+   ```
 
 ---
 
-## 🚀 Getting Started Locally
+### Option 4: Docker Container
+Run anywhere with Docker:
+```bash
+# 1. Build Docker image
+docker build -t iitr-fixit .
+
+# 2. Run container on port 80
+docker run -d -p 80:80 --name iitr-fixit-app iitr-fixit
+
+# Access at http://localhost
+```
+
+---
+
+## 👥 Demo Accounts & Pre-Loaded Personas
+
+For evaluators and campus reviewers, one-click demo credentials are provided on the login page:
+
+1. **Resident / Student (`Aarav Sharma`)**
+   - **Email**: `aarav.sharma@me.iitr.ac.in`
+   - **Hostel / Room**: Rajendra Bhawan, `R-314`
+   - **Authorized**: File complaints, upload photos, track resolution timeline, message technicians, rate service.
+
+2. **Maintenance Staff (`Rajesh Kumar`)**
+   - **Email**: `rajesh.estate@iitr.ac.in`
+   - **Department**: Electrical Maintenance Unit
+   - **Authorized**: View assigned work orders, claim unassigned jobs, post internal technician notes, resolve repairs.
+
+3. **Warden / Administrator (`Dr. P. K. Sen`)**
+   - **Email**: `warden.rajendra@iitr.ac.in`
+   - **Affiliation**: Council of Wardens / Estate Directorate
+   - **Authorized**: Campus-wide analytics, technician reassignments, SLA monitoring, hostel loads, CSV export.
+
+---
+
+## 🧭 Application Routes
+
+| Route | Page | Description | Access |
+|---|---|---|---|
+| `/` | **Landing Page** | Value proposition, live metrics ticker, 4-step *How It Works*, trade category grid, SLA guarantees, and role portals. | Public |
+| `/login` | **Campus SSO Login** | Institutional IITR email authentication with role selection tabs. | Public |
+| `/track` | **Quick Tracker** | Direct lookup page to inspect any ticket status by Ticket ID without logging in. | Public |
+| `/dashboard` | **Unified Dashboard** | Automatically routes authenticated users to their authorized role dashboard. | Authenticated |
+| `/student` | **Resident Dashboard** | Student room tickets, repair timelines, and quick issue submission. | Student Only |
+| `/staff` | **Staff Work Queue** | Assigned jobs, unassigned pool, emergency jobs, and resolution forms. | Staff Only |
+| `/warden` / `/admin` | **Command Center** | Executive KPI metrics, Recharts visual analytics, technician dispatches. | Warden/Admin Only |
+| `/requests` | **Requests Directory** | Searchable, multi-filtered list and table view with status and priority filters. | Authenticated |
+| `/requests/new` | **Submit Request** | Form with category picker, hostel & room selectors, preferred access slots, and photos. | Student & Admin |
+| `/requests/:id` | **Ticket Details** | Full audit timeline, 6-step visual tracker, photo lightbox, role-gated action buttons. | Authenticated |
+| `/unauthorized` | **403 Forbidden** | Intercepts unauthorized cross-role navigation attempts. | Public/Guarded |
+
+---
+
+## 🚀 Running Locally
 
 ### Prerequisites
 - Node.js 18+ (Node 24 LTS verified)
 - npm 10+
 
-### Installation & Run
-
+### Development Server
 ```bash
 # 1. Clone repository
-git clone <repo-url>
-cd "community outreach"
+git clone https://github.com/namang-afk/iitr-fixit.git
+cd iitr-fixit
 
 # 2. Install dependencies
 npm install
@@ -128,14 +177,12 @@ npm install
 # 3. Start local development server
 npm run dev
 
-# 4. Open in browser
-# Visit http://127.0.0.1:5173/
+# 4. Open in browser: http://127.0.0.1:5173/
 ```
 
-### Production Build & Linting
-
+### Production Build & Preview
 ```bash
-# Build production bundle with TypeScript check
+# Build production bundle with TypeScript checks
 npm run build
 
 # Preview production build locally

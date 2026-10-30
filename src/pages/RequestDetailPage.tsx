@@ -80,7 +80,7 @@ export const RequestDetailPage: React.FC = () => {
   }
 
   const isStaffOrAdmin = currentRole === 'staff' || currentRole === 'admin';
-  const isAuthor = request.residentId === currentUser.id;
+  const isAuthor = currentUser ? request.residentId === currentUser.id : false;
 
   const handleStatusChange = (newStatus: RequestStatus, note?: string) => {
     if (newStatus === 'resolved') {

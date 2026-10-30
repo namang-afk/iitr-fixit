@@ -34,18 +34,18 @@ export const SubmitRequestPage: React.FC = () => {
   const [category, setCategory] = useState<RequestCategory>('electrical');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [hostel, setHostel] = useState(currentUser.hostel || 'Rajendra Bhawan');
+  const [hostel, setHostel] = useState(currentUser?.hostel || 'Rajendra Bhawan');
   const [block, setBlock] = useState('Wing C');
-  const [roomNumber, setRoomNumber] = useState(currentUser.room || 'R-314');
+  const [roomNumber, setRoomNumber] = useState(currentUser?.room || 'R-314');
   const [priority, setPriority] = useState<RequestPriority>('normal');
   const [preferredAccessTime, setPreferredAccessTime] = useState<PreferredAccessTime>('afternoon');
   const [photos, setPhotos] = useState<string[]>([]);
 
   // Resident Contact info
-  const [residentName, setResidentName] = useState(currentUser.name);
-  const [residentPhone, setResidentPhone] = useState(currentUser.phone);
-  const [residentEnrollment, setResidentEnrollment] = useState(currentUser.enrollmentNo || '22115042');
-  const [residentEmail, setResidentEmail] = useState(currentUser.email);
+  const [residentName, setResidentName] = useState(currentUser?.name || 'Aarav Sharma');
+  const [residentPhone, setResidentPhone] = useState(currentUser?.phone || '+91 98765 43210');
+  const [residentEnrollment, setResidentEnrollment] = useState(currentUser?.enrollmentNo || '22115042');
+  const [residentEmail, setResidentEmail] = useState(currentUser?.email || 'resident@iitr.ac.in');
 
   // Validation & UI State
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -111,7 +111,7 @@ export const SubmitRequestPage: React.FC = () => {
         roomNumber: roomNumber.trim(),
         preferredAccessTime,
         photos,
-        residentId: currentUser.id,
+        residentId: currentUser?.id || 'user_resident_1',
         residentName: residentName.trim(),
         residentEnrollment: residentEnrollment.trim(),
         residentPhone: residentPhone.trim(),

@@ -86,7 +86,9 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
     resolutionNotes?: string
   ): RequestItem => {
     try {
-      const updated = requestService.updateStatus(id, newStatus, currentUser.name, currentRole, note, resolutionNotes);
+      const actorName = currentUser?.name || 'Estate Official';
+      const actorRole = currentRole || 'staff';
+      const updated = requestService.updateStatus(id, newStatus, actorName, actorRole, note, resolutionNotes);
       refreshRequests();
       success('Status Updated', `Request #${id} is now ${newStatus.replace('_', ' ').toUpperCase()}.`);
       return updated;
@@ -94,11 +96,13 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
       error('Failed to update status', err.message);
       throw err;
     }
-  }, [currentUser.name, currentRole, refreshRequests, success, error]);
+  }, [currentUser?.name, currentRole, refreshRequests, success, error]);
 
   const assignStaff = useCallback((id: string, staffId: string): RequestItem => {
     try {
-      const updated = requestService.assignStaff(id, staffId, currentUser.name, currentRole);
+      const actorName = currentUser?.name || 'Warden';
+      const actorRole = currentRole || 'admin';
+      const updated = requestService.assignStaff(id, staffId, actorName, actorRole);
       refreshRequests();
       success('Technician Assigned', `Dispatched to ${updated.assignedStaffName}.`);
       return updated;
@@ -106,11 +110,13 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
       error('Failed to assign technician', err.message);
       throw err;
     }
-  }, [currentUser.name, currentRole, refreshRequests, success, error]);
+  }, [currentUser?.name, currentRole, refreshRequests, success, error]);
 
   const updatePriority = useCallback((id: string, newPriority: RequestPriority, reason?: string): RequestItem => {
     try {
-      const updated = requestService.updatePriority(id, newPriority, currentUser.name, currentRole, reason);
+      const actorName = currentUser?.name || 'Estate Supervisor';
+      const actorRole = currentRole || 'admin';
+      const updated = requestService.updatePriority(id, newPriority, actorName, actorRole, reason);
       refreshRequests();
       info('Priority Updated', `Ticket #${id} set to ${newPriority.toUpperCase()} priority.`);
       return updated;
@@ -118,11 +124,13 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
       error('Failed to update priority', err.message);
       throw err;
     }
-  }, [currentUser.name, currentRole, refreshRequests, info, error]);
+  }, [currentUser?.name, currentRole, refreshRequests, info, error]);
 
   const addComment = useCallback((id: string, text: string, isInternalStaffOnly = false): RequestComment => {
     try {
-      const comment = requestService.addComment(id, text, currentUser.name, currentRole, isInternalStaffOnly);
+      const actorName = currentUser?.name || 'Campus Member';
+      const actorRole = currentRole || 'student';
+      const comment = requestService.addComment(id, text, actorName, actorRole, isInternalStaffOnly);
       refreshRequests();
       success('Comment Posted', isInternalStaffOnly ? 'Internal staff work note added.' : 'Update sent to resident.');
       return comment;
@@ -130,11 +138,13 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
       error('Failed to post comment', err.message);
       throw err;
     }
-  }, [currentUser.name, currentRole, refreshRequests, success, error]);
+  }, [currentUser?.name, currentRole, refreshRequests, success, error]);
 
   const reopenRequest = useCallback((id: string, reason: string): RequestItem => {
     try {
-      const updated = requestService.reopenRequest(id, reason, currentUser.name, currentRole);
+      const actorName = currentUser?.name || 'Resident';
+      const actorRole = currentRole || 'student';
+      const updated = requestService.reopenRequest(id, reason, actorName, actorRole);
       refreshRequests();
       info('Request Reopened', `Ticket #${id} returned to Under Review.`);
       return updated;
@@ -142,7 +152,7 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
       error('Failed to reopen request', err.message);
       throw err;
     }
-  }, [currentUser.name, currentRole, refreshRequests, info, error]);
+  }, [currentUser?.name, currentRole, refreshRequests, info, error]);
 
   const submitFeedback = useCallback((id: string, rating: number, comment?: string): RequestItem => {
     try {
@@ -167,8 +177,13 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [requests]);
 
   const getFilteredRequests = useCallback((filters: FilterOptions) => {
-    return requestService.filterRequests(requests, filters, currentRole, currentUser.id);
-  }, [requests, currentRole, currentUser.id]);
+    return requestService.filterRequests(
+      requests, 
+      filters, 
+      currentRole || 'student', 
+      currentUser?.id || ''
+    );
+  }, [requests, currentRole, currentUser?.id]);
 
   return (
     <RequestContext.Provider

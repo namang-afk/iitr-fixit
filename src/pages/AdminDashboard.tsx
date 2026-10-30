@@ -196,7 +196,7 @@ export const AdminDashboard: React.FC = () => {
               Council of Wardens / Estate Directorate
             </span>
             <span className="text-xs text-stone-500">
-              Welcome, {currentUser.name}
+              Welcome, {currentUser?.name || 'Administrator'}
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-stone-900 tracking-tight font-display">

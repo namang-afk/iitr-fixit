@@ -32,14 +32,14 @@ export const StaffDashboard: React.FC = () => {
   const [resolutionNotes, setResolutionNotes] = useState('');
 
   // Find my staff record
-  const myStaffRecord = staffMembers.find(s => s.name.toLowerCase() === currentUser.name.toLowerCase()) || staffMembers[0];
+  const myStaffRecord = staffMembers.find(s => s.name.toLowerCase() === (currentUser?.name || '').toLowerCase()) || staffMembers[0];
 
   // Tab filtering
   const filteredJobs = useMemo(() => {
     return requests.filter(req => {
       // Tab filter
       if (activeTab === 'assigned_to_me') {
-        if (req.assignedStaffId !== myStaffRecord.id && req.assignedStaffName !== currentUser.name) {
+        if (req.assignedStaffId !== myStaffRecord.id && req.assignedStaffName !== currentUser?.name) {
           return false;
         }
       } else if (activeTab === 'unassigned') {
@@ -71,7 +71,7 @@ export const StaffDashboard: React.FC = () => {
       if (b.priority === 'emergency' && a.priority !== 'emergency') return 1;
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
-  }, [requests, activeTab, search, myStaffRecord, currentUser.name]);
+  }, [requests, activeTab, search, myStaffRecord, currentUser?.name]);
 
   const assignedCount = requests.filter(r => r.assignedStaffId === myStaffRecord.id && r.status !== 'closed').length;
   const unassignedCount = requests.filter(r => !r.assignedStaffId && r.status !== 'resolved' && r.status !== 'closed').length;
@@ -108,7 +108,7 @@ export const StaffDashboard: React.FC = () => {
               Estate Technician Portal
             </span>
             <span className="text-xs text-stone-500">
-              Department: {currentUser.department}
+              Department: {currentUser?.department || 'Estate & Works – Electrical Unit'}
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-stone-900 tracking-tight font-display">

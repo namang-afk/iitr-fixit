@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { useRequests } from '../context/RequestContext';
 import { CATEGORIES, IITR_HOSTELS } from '../constants';
 import { CategoryIcon } from '../components/common/CategoryIcon';
@@ -16,11 +17,16 @@ import {
   Building, 
   Flame,
   ThumbsUp,
-  FileText
+  FileText,
+  LogIn,
+  UserCheck,
+  Shield,
+  LayoutDashboard
 } from 'lucide-react';
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, currentRole, currentUser } = useAuth();
   const { requests } = useRequests();
   const [trackId, setTrackId] = useState('');
 
@@ -86,27 +92,101 @@ export const LandingPage: React.FC = () => {
               A transparent, centralized repair portal for IIT Roorkee residents. Report room issues, track real-time progress from submission to resolution, and communicate directly with estate technicians.
             </p>
 
-            {/* Main CTAs */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-              <Link
-                to="/requests/new"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[#7A1528] hover:bg-[#621323] text-white font-bold rounded-xl shadow-sm hover:shadow transition-all duration-200 active:scale-95 text-sm"
-              >
-                <PlusCircle className="w-4 h-4 text-amber-300" />
-                <span>Report an Issue</span>
-              </Link>
+            {/* Main CTAs & Role Portals */}
+            {isAuthenticated ? (
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                <Link
+                  to="/dashboard"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[#7A1528] hover:bg-[#621323] text-white font-bold rounded-xl shadow-sm hover:shadow transition-all duration-200 active:scale-95 text-sm"
+                >
+                  <LayoutDashboard className="w-4 h-4 text-amber-300" />
+                  <span>Open {currentRole === 'student' ? 'Resident' : currentRole === 'staff' ? 'Staff' : 'Warden'} Dashboard</span>
+                </Link>
 
-              <Link
-                to="/track"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-white hover:bg-stone-50 text-stone-800 font-bold rounded-xl border border-stone-300 shadow-2xs hover:border-stone-400 transition-all text-sm"
-              >
-                <Search className="w-4 h-4 text-stone-500" />
-                <span>Track a Request</span>
-              </Link>
-            </div>
+                {currentRole !== 'staff' ? (
+                  <Link
+                    to="/requests/new"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-white hover:bg-stone-50 text-stone-800 font-bold rounded-xl border border-stone-300 shadow-2xs hover:border-stone-400 transition-all text-sm"
+                  >
+                    <PlusCircle className="w-4 h-4 text-[#7A1528]" />
+                    <span>Report New Issue</span>
+                  </Link>
+                ) : (
+                  <Link
+                    to="/requests"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-white hover:bg-stone-50 text-stone-800 font-bold rounded-xl border border-stone-300 shadow-2xs hover:border-stone-400 transition-all text-sm"
+                  >
+                    <Wrench className="w-4 h-4 text-blue-600" />
+                    <span>View Assigned Work Orders</span>
+                  </Link>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4 pt-2">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <Link
+                    to="/login"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[#7A1528] hover:bg-[#621323] text-white font-bold rounded-xl shadow-sm hover:shadow transition-all duration-200 active:scale-95 text-sm"
+                  >
+                    <LogIn className="w-4 h-4 text-amber-300" />
+                    <span>Sign In with IITR Mail</span>
+                  </Link>
+
+                  <Link
+                    to="/track"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-white hover:bg-stone-50 text-stone-800 font-bold rounded-xl border border-stone-300 shadow-2xs hover:border-stone-400 transition-all text-sm"
+                  >
+                    <Search className="w-4 h-4 text-stone-500" />
+                    <span>Track a Request</span>
+                  </Link>
+                </div>
+
+                {/* Role portal shortcut gateways */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 max-w-2xl mx-auto text-left">
+                  <Link
+                    to="/login?role=student"
+                    className="p-3 bg-white/90 hover:bg-white border border-stone-200 hover:border-emerald-300 rounded-xl transition-all shadow-2xs group"
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-6 h-6 rounded-md bg-emerald-50 text-emerald-700 flex items-center justify-center text-xs">
+                        <UserCheck className="w-3.5 h-3.5" />
+                      </div>
+                      <span className="text-xs font-bold text-stone-900 group-hover:text-emerald-700">Resident / Student</span>
+                    </div>
+                    <p className="text-[11px] text-stone-500">Report room issues & track repairs in your Bhawan</p>
+                  </Link>
+
+                  <Link
+                    to="/login?role=staff"
+                    className="p-3 bg-white/90 hover:bg-white border border-stone-200 hover:border-blue-300 rounded-xl transition-all shadow-2xs group"
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-6 h-6 rounded-md bg-blue-50 text-blue-700 flex items-center justify-center text-xs">
+                        <Wrench className="w-3.5 h-3.5" />
+                      </div>
+                      <span className="text-xs font-bold text-stone-900 group-hover:text-blue-700">Maintenance Staff</span>
+                    </div>
+                    <p className="text-[11px] text-stone-500">Manage work queues & update resolution milestones</p>
+                  </Link>
+
+                  <Link
+                    to="/login?role=admin"
+                    className="p-3 bg-white/90 hover:bg-white border border-stone-200 hover:border-purple-300 rounded-xl transition-all shadow-2xs group"
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-6 h-6 rounded-md bg-purple-50 text-purple-700 flex items-center justify-center text-xs">
+                        <Shield className="w-3.5 h-3.5" />
+                      </div>
+                      <span className="text-xs font-bold text-stone-900 group-hover:text-purple-700">Warden / Estate</span>
+                    </div>
+                    <p className="text-[11px] text-stone-500">Campus-wide overview, dispatch technicians & SLAs</p>
+                  </Link>
+                </div>
+              </div>
+            )}
 
             {/* Quick Track Input Bar */}
-            <div className="pt-6 max-w-md mx-auto">
+            <div className="pt-4 max-w-md mx-auto">
               <form onSubmit={handleTrackSubmit} className="relative flex items-center">
                 <input
                   type="text"

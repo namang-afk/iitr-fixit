@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { 
   Wrench, 
@@ -12,12 +12,15 @@ import {
   Home,
   User,
   Shield,
-  Briefcase
+  Briefcase,
+  LogOut,
+  LogIn
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
-  const { currentRole, currentUser } = useAuth();
+  const { currentRole, currentUser, isAuthenticated, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isActive = (path: string) => {
@@ -25,14 +28,22 @@ export const Navbar: React.FC = () => {
     return location.pathname.startsWith(path);
   };
 
+  const handleLogout = () => {
+    logout();
+    setMobileMenuOpen(false);
+    navigate('/login');
+  };
+
   const navLinks = [
     { name: 'Home', path: '/', icon: <Home className="w-4 h-4" /> },
-    { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
-    { 
-      name: currentRole === 'student' ? 'My Requests' : 'All Requests', 
-      path: '/requests', 
-      icon: <ClipboardList className="w-4 h-4" /> 
-    },
+    ...(isAuthenticated ? [
+      { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
+      { 
+        name: currentRole === 'student' ? 'My Requests' : currentRole === 'staff' ? 'Work Queue' : 'All Requests', 
+        path: '/requests', 
+        icon: <ClipboardList className="w-4 h-4" /> 
+      },
+    ] : []),
     { name: 'Quick Track', path: '/track', icon: <Search className="w-4 h-4" /> },
   ];
 
@@ -59,6 +70,8 @@ export const Navbar: React.FC = () => {
             Warden
           </span>
         );
+      default:
+        return null;
     }
   };
 
@@ -108,43 +121,84 @@ export const Navbar: React.FC = () => {
 
           {/* Right Section: CTAs & User Profile */}
           <div className="hidden md:flex items-center gap-3">
-            {/* Report Issue CTA Button */}
-            <Link
-              to="/requests/new"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#7A1528] hover:bg-[#621323] text-white text-xs font-bold rounded-xl shadow-xs hover:shadow transition-all duration-200 active:scale-[0.98]"
-            >
-              <PlusCircle className="w-4 h-4 text-amber-300" />
-              <span>Report Issue</span>
-            </Link>
+            {isAuthenticated && currentUser ? (
+              <>
+                {/* Report Issue CTA Button (Visible to student or admin) */}
+                {currentRole !== 'staff' && (
+                  <Link
+                    to="/requests/new"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-[#7A1528] hover:bg-[#621323] text-white text-xs font-bold rounded-xl shadow-xs hover:shadow transition-all duration-200 active:scale-[0.98]"
+                  >
+                    <PlusCircle className="w-4 h-4 text-amber-300" />
+                    <span>Report Issue</span>
+                  </Link>
+                )}
 
-            {/* Current Persona Card */}
-            <div className="flex items-center gap-2.5 pl-3 border-l border-stone-200">
-              <div className="text-right">
-                <div className="flex items-center justify-end gap-1.5">
-                  <span className="text-xs font-bold text-stone-900 truncate max-w-[130px]">
-                    {currentUser.name}
-                  </span>
-                  {getRoleBadge()}
+                {/* Current Persona Card */}
+                <div className="flex items-center gap-2.5 pl-3 border-l border-stone-200">
+                  <div className="text-right">
+                    <div className="flex items-center justify-end gap-1.5">
+                      <span className="text-xs font-bold text-stone-900 truncate max-w-[130px]">
+                        {currentUser.name}
+                      </span>
+                      {getRoleBadge()}
+                    </div>
+                    <p className="text-[11px] text-stone-500 truncate max-w-[170px]">
+                      {currentUser.hostel ? `${currentUser.hostel} • ${currentUser.room}` : currentUser.department}
+                    </p>
+                  </div>
+                  <div className="w-9 h-9 rounded-full bg-stone-100 border border-stone-300 flex items-center justify-center font-bold text-xs text-[#7A1528] shadow-xs">
+                    {currentUser.name.split(' ').map(n => n[0]).join('')}
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="p-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors ml-1"
+                    title="Sign Out"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
                 </div>
-                <p className="text-[11px] text-stone-500 truncate max-w-[170px]">
-                  {currentUser.hostel ? `${currentUser.hostel} • ${currentUser.room}` : currentUser.department}
-                </p>
+              </>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/track"
+                  className="px-3 py-2 text-stone-600 hover:text-stone-900 text-xs font-semibold"
+                >
+                  Track Ticket
+                </Link>
+                <Link
+                  to="/login"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#7A1528] hover:bg-[#621323] text-white text-xs font-bold rounded-xl shadow-xs hover:shadow transition-all active:scale-[0.98]"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span>Portal Login</span>
+                </Link>
               </div>
-              <div className="w-9 h-9 rounded-full bg-stone-100 border border-stone-300 flex items-center justify-center font-bold text-xs text-[#7A1528] shadow-xs">
-                {currentUser.name.split(' ').map(n => n[0]).join('')}
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
           <div className="flex items-center gap-2 md:hidden">
-            <Link
-              to="/requests/new"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#7A1528] text-white text-xs font-semibold rounded-lg"
-            >
-              <PlusCircle className="w-3.5 h-3.5" />
-              <span>Report</span>
-            </Link>
+            {isAuthenticated ? (
+              currentRole !== 'staff' && (
+                <Link
+                  to="/requests/new"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#7A1528] text-white text-xs font-semibold rounded-lg"
+                >
+                  <PlusCircle className="w-3.5 h-3.5" />
+                  <span>Report</span>
+                </Link>
+              )
+            ) : (
+              <Link
+                to="/login"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#7A1528] text-white text-xs font-semibold rounded-lg"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Login</span>
+              </Link>
+            )}
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -160,13 +214,35 @@ export const Navbar: React.FC = () => {
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-stone-200 bg-white px-4 pt-3 pb-5 space-y-3">
-          <div className="flex items-center justify-between pb-3 border-b border-stone-100">
-            <div>
-              <div className="text-xs font-bold text-stone-900">{currentUser.name}</div>
-              <div className="text-[11px] text-stone-500">{currentUser.email}</div>
+          {isAuthenticated && currentUser ? (
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+              <div>
+                <div className="text-xs font-bold text-stone-900">{currentUser.name}</div>
+                <div className="text-[11px] text-stone-500">{currentUser.email}</div>
+              </div>
+              <div className="flex items-center gap-2">
+                {getRoleBadge()}
+                <button
+                  onClick={handleLogout}
+                  className="p-1 text-rose-600 hover:bg-rose-50 rounded"
+                  title="Sign out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
             </div>
-            {getRoleBadge()}
-          </div>
+          ) : (
+            <div className="pb-3 border-b border-stone-100 flex items-center justify-between">
+              <span className="text-xs text-stone-500">Not logged in</span>
+              <Link
+                to="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3 py-1 bg-[#7A1528] text-white rounded-lg text-xs font-bold"
+              >
+                Sign In
+              </Link>
+            </div>
+          )}
 
           <div className="space-y-1">
             {navLinks.map((link) => (

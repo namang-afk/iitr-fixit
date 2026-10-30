@@ -104,7 +104,7 @@ export const RequestsListPage: React.FC = () => {
                 : 'text-stone-600 hover:text-stone-900'
             }`}
           >
-            My Room Tickets ({requests.filter(r => r.residentId === currentUser.id).length})
+            My Room Tickets ({currentUser ? requests.filter(r => r.residentId === currentUser.id).length : 0})
           </button>
           <button
             onClick={() => setAssignedToMe(false)}
