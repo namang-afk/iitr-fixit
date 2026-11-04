@@ -5,28 +5,19 @@ import { useToast } from '../context/ToastContext';
 import { UserRole } from '../types';
 import { IITR_HOSTELS } from '../constants';
 import { 
-  AUTHORIZED_STAFF_CREDENTIALS, 
-  AUTHORIZED_WARDEN_CREDENTIAL,
-  DEFAULT_STUDENT_ACCOUNT 
-} from '../constants/authCredentials';
-import { 
   Wrench, 
   UserCheck, 
   ShieldCheck, 
-  Building, 
   Lock, 
   Mail, 
   ArrowRight, 
   AlertCircle, 
-  Sparkles,
-  Info,
-  Eye,
-  EyeOff,
-  UserPlus,
-  LogIn,
-  KeyRound,
-  Check,
-  User
+  Eye, 
+  EyeOff, 
+  UserPlus, 
+  LogIn, 
+  User,
+  ShieldAlert
 } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
@@ -58,8 +49,6 @@ export const LoginPage: React.FC = () => {
   // UI state
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [showCredentialsReference, setShowCredentialsReference] = useState(true);
 
   // Read return URL from state if user was redirected from a protected route
   const from = (location.state as any)?.from?.pathname || '/dashboard';
@@ -179,20 +168,9 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  // Populate ONLY the email into the sign-in form (leaves password blank so user types it)
-  const handleUseEmail = (presetEmail: string, role: UserRole) => {
-    setAuthMode('signin');
-    setSelectedRole(role);
-    setEmail(presetEmail);
-    setPassword('');
-    setErrorMessage('');
-    setCopiedKey(presetEmail);
-    setTimeout(() => setCopiedKey(null), 2000);
-  };
-
   return (
     <div className="min-h-[85vh] flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
-      <div className="max-w-xl w-full space-y-6">
+      <div className="max-w-md w-full space-y-6">
         {/* Top Header & Branding */}
         <div className="text-center space-y-3">
           <Link to="/" className="inline-flex items-center gap-2.5 group">
@@ -222,7 +200,7 @@ export const LoginPage: React.FC = () => {
         </div>
 
         {/* Auth Mode Toggle Bar */}
-        <div className="flex rounded-2xl p-1 bg-stone-200/70 border border-stone-300 max-w-sm mx-auto">
+        <div className="flex rounded-2xl p-1 bg-stone-200/70 border border-stone-300 max-w-xs mx-auto">
           <button
             type="button"
             onClick={() => {
@@ -230,7 +208,7 @@ export const LoginPage: React.FC = () => {
               setErrorMessage('');
               setPassword('');
             }}
-            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+            className={`flex-1 py-1.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
               authMode === 'signin'
                 ? 'bg-white text-stone-900 shadow-xs'
                 : 'text-stone-600 hover:text-stone-900'
@@ -246,14 +224,14 @@ export const LoginPage: React.FC = () => {
               setAuthMode('signup');
               setErrorMessage('');
             }}
-            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+            className={`flex-1 py-1.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
               authMode === 'signup'
                 ? 'bg-white text-stone-900 shadow-xs'
                 : 'text-stone-600 hover:text-stone-900'
             }`}
           >
             <UserPlus className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Sign Up as Student</span>
+            <span>Sign Up</span>
           </button>
         </div>
 
@@ -273,7 +251,7 @@ export const LoginPage: React.FC = () => {
               {/* Role Tabs */}
               <div>
                 <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">
-                  Select Portal Role
+                  Select Role
                 </label>
                 <div className="grid grid-cols-3 gap-1.5 p-1 bg-stone-100 rounded-xl border border-stone-200">
                   <button
@@ -299,7 +277,7 @@ export const LoginPage: React.FC = () => {
                     }`}
                   >
                     <Wrench className="w-4 h-4" />
-                    <span className="truncate">Staff (5 Accounts)</span>
+                    <span className="truncate">Staff</span>
                   </button>
 
                   <button
@@ -312,15 +290,14 @@ export const LoginPage: React.FC = () => {
                     }`}
                   >
                     <ShieldCheck className="w-4 h-4" />
-                    <span className="truncate">Warden (1 Account)</span>
+                    <span className="truncate">Warden</span>
                   </button>
                 </div>
 
-                {/* Role instructions */}
                 <p className="text-[11px] text-stone-500 mt-2">
-                  {selectedRole === 'student' && 'Students can log in with their registered account. First-time residents should click "Sign Up as Student".'}
-                  {selectedRole === 'staff' && 'Staff access is strictly restricted to the 5 authorized estate maintenance IDs & passwords.'}
-                  {selectedRole === 'admin' && 'Warden access is strictly restricted to the authorized Chief Warden ID & password.'}
+                  {selectedRole === 'student' && 'Students can log in with their registered account or create a new resident account.'}
+                  {selectedRole === 'staff' && 'Maintenance technicians authenticate with their authorized staff credentials.'}
+                  {selectedRole === 'admin' && 'Wardens & Estate Administrators authenticate with official administration credentials.'}
                 </p>
               </div>
 
@@ -346,9 +323,9 @@ export const LoginPage: React.FC = () => {
                       }}
                       placeholder={
                         selectedRole === 'student' 
-                          ? 'e.g. aarav.sharma@me.iitr.ac.in' 
+                          ? 'e.g. yourname@me.iitr.ac.in' 
                           : selectedRole === 'staff' 
-                          ? 'e.g. rajesh.estate@iitr.ac.in' 
+                          ? 'e.g. staff.id@iitr.ac.in' 
                           : 'warden.rajendra@iitr.ac.in'
                       }
                       className="w-full pl-9 pr-3.5 py-2.5 bg-stone-50 rounded-xl border border-stone-300 text-xs text-stone-900 focus:bg-white focus:border-[#7A1528] focus:ring-2 focus:ring-[#7A1528]/10 focus:outline-hidden"
@@ -356,13 +333,12 @@ export const LoginPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Password - NO AUTOMATIC PASSWORDS */}
+                {/* Password - ABSOLUTELY NO AUTOMATIC PASSWORDS */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="block text-xs font-semibold text-stone-700">
                       Password <span className="text-rose-500">*</span>
                     </label>
-                    <span className="text-[10px] text-stone-400">Type password manually</span>
                   </div>
                   <div className="relative">
                     <Lock className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -374,7 +350,7 @@ export const LoginPage: React.FC = () => {
                         setPassword(e.target.value);
                         if (errorMessage) setErrorMessage('');
                       }}
-                      placeholder="Enter password..."
+                      placeholder="••••••••"
                       className="w-full pl-9 pr-10 py-2.5 bg-stone-50 rounded-xl border border-stone-300 text-xs text-stone-900 focus:bg-white focus:border-[#7A1528] focus:ring-2 focus:ring-[#7A1528]/10 focus:outline-hidden font-mono"
                     />
                     <button
@@ -394,7 +370,7 @@ export const LoginPage: React.FC = () => {
                   disabled={isSubmitting}
                   className="w-full py-3 px-4 bg-[#7A1528] hover:bg-[#621323] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all flex items-center justify-center gap-2 active:scale-95 disabled:bg-stone-400 mt-2"
                 >
-                  <span>{isSubmitting ? 'Authenticating...' : `Sign in as ${selectedRole.toUpperCase()}`}</span>
+                  <span>{isSubmitting ? 'Authenticating...' : `Sign In as ${selectedRole.toUpperCase()}`}</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </form>
@@ -424,7 +400,7 @@ export const LoginPage: React.FC = () => {
               <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900">
                 <UserPlus className="w-4 h-4 text-emerald-700 flex-shrink-0" />
                 <span>
-                  Resident accounts allow you to report room repairs, upload photos, track resolution in real-time, and provide verified sign-off ratings.
+                  Register with your Bhawan room details to log maintenance complaints and track repair progress.
                 </span>
               </div>
 
@@ -494,7 +470,7 @@ export const LoginPage: React.FC = () => {
                       required
                       value={signupRoom}
                       onChange={(e) => setSignupRoom(e.target.value)}
-                      placeholder="e.g. R-214 or Wing B-105"
+                      placeholder="e.g. R-214 or B-105"
                       className="w-full px-3 py-2.5 bg-stone-50 rounded-xl border border-stone-300 text-xs text-stone-900 focus:bg-white focus:border-[#7A1528]"
                     />
                   </div>
@@ -597,145 +573,6 @@ export const LoginPage: React.FC = () => {
                 >
                   Sign In here ➔
                 </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* AUTHORIZED CREDENTIALS REFERENCE TABLE */}
-        <div className="bg-white rounded-3xl p-5 sm:p-6 border border-stone-200/90 shadow-xs space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <KeyRound className="w-4 h-4 text-[#7A1528]" />
-              <h2 className="text-xs font-bold text-stone-900 uppercase tracking-wider">
-                Authorized Staff & Warden Credentials
-              </h2>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowCredentialsReference(!showCredentialsReference)}
-              className="text-[11px] font-semibold text-[#7A1528] hover:underline"
-            >
-              {showCredentialsReference ? 'Hide' : 'Show'}
-            </button>
-          </div>
-
-          <p className="text-[11px] text-stone-500 leading-relaxed">
-            Staff and Warden accounts are strictly provisioned. They can log in <strong>only</strong> through these generated credentials. <em>(Passwords must be typed manually).</em>
-          </p>
-
-          {showCredentialsReference && (
-            <div className="space-y-4 pt-1">
-              {/* 5 Staff Accounts */}
-              <div>
-                <div className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-2 flex items-center gap-1.5">
-                  <Wrench className="w-3 h-3 text-blue-600" />
-                  <span>5 Generated Staff Accounts (Estate & Works Directorate)</span>
-                </div>
-                <div className="space-y-1.5">
-                  {AUTHORIZED_STAFF_CREDENTIALS.map((s, idx) => (
-                    <div 
-                      key={s.id}
-                      className="p-2.5 bg-stone-50 hover:bg-stone-100/80 rounded-xl border border-stone-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2"
-                    >
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-stone-900">{idx + 1}. {s.name}</span>
-                          <span className="text-[10px] font-medium bg-blue-50 text-blue-800 px-1.5 py-0.2 rounded border border-blue-200">
-                            {s.specialty}
-                          </span>
-                        </div>
-                        <div className="text-[11px] text-stone-500 font-mono mt-0.5">
-                          ID: <span className="text-stone-700 font-semibold">{s.email}</span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 sm:self-center">
-                        <div className="text-[11px] font-mono bg-white px-2 py-1 rounded-md border border-stone-300 text-stone-700">
-                          Password: <strong className="text-stone-900">{s.password}</strong>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => handleUseEmail(s.email, 'staff')}
-                          className="px-2 py-1 bg-stone-800 hover:bg-stone-900 text-white text-[10px] font-semibold rounded-lg transition-colors"
-                          title="Fills email only into sign-in form"
-                        >
-                          {copiedKey === s.email ? <Check className="w-3 h-3 text-emerald-400" /> : 'Use Email'}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* 1 Warden Account */}
-              <div>
-                <div className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-2 flex items-center gap-1.5">
-                  <ShieldCheck className="w-3 h-3 text-purple-600" />
-                  <span>1 Generated Warden Account (Chief Warden & Estate Council)</span>
-                </div>
-                <div className="p-2.5 bg-stone-50 hover:bg-stone-100/80 rounded-xl border border-stone-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-stone-900">{AUTHORIZED_WARDEN_CREDENTIAL.name}</span>
-                      <span className="text-[10px] font-medium bg-purple-50 text-purple-800 px-1.5 py-0.2 rounded border border-purple-200">
-                        Chief Warden
-                      </span>
-                    </div>
-                    <div className="text-[11px] text-stone-500 font-mono mt-0.5">
-                      ID: <span className="text-stone-700 font-semibold">{AUTHORIZED_WARDEN_CREDENTIAL.email}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 sm:self-center">
-                    <div className="text-[11px] font-mono bg-white px-2 py-1 rounded-md border border-stone-300 text-stone-700">
-                      Password: <strong className="text-stone-900">{AUTHORIZED_WARDEN_CREDENTIAL.password}</strong>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleUseEmail(AUTHORIZED_WARDEN_CREDENTIAL.email, 'admin')}
-                      className="px-2 py-1 bg-stone-800 hover:bg-stone-900 text-white text-[10px] font-semibold rounded-lg transition-colors"
-                      title="Fills email only into sign-in form"
-                    >
-                      {copiedKey === AUTHORIZED_WARDEN_CREDENTIAL.email ? <Check className="w-3 h-3 text-emerald-400" /> : 'Use Email'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Pre-registered Student Account */}
-              <div>
-                <div className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-2 flex items-center gap-1.5">
-                  <UserCheck className="w-3 h-3 text-emerald-600" />
-                  <span>Pre-Registered Student (Or Register Your Own via Sign Up)</span>
-                </div>
-                <div className="p-2.5 bg-stone-50 hover:bg-stone-100/80 rounded-xl border border-stone-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-stone-900">{DEFAULT_STUDENT_ACCOUNT.name}</span>
-                      <span className="text-[10px] font-medium bg-emerald-50 text-emerald-800 px-1.5 py-0.2 rounded border border-emerald-200">
-                        {DEFAULT_STUDENT_ACCOUNT.hostel} • {DEFAULT_STUDENT_ACCOUNT.room}
-                      </span>
-                    </div>
-                    <div className="text-[11px] text-stone-500 font-mono mt-0.5">
-                      ID: <span className="text-stone-700 font-semibold">{DEFAULT_STUDENT_ACCOUNT.email}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 sm:self-center">
-                    <div className="text-[11px] font-mono bg-white px-2 py-1 rounded-md border border-stone-300 text-stone-700">
-                      Password: <strong className="text-stone-900">{DEFAULT_STUDENT_ACCOUNT.password}</strong>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleUseEmail(DEFAULT_STUDENT_ACCOUNT.email, 'student')}
-                      className="px-2 py-1 bg-stone-800 hover:bg-stone-900 text-white text-[10px] font-semibold rounded-lg transition-colors"
-                      title="Fills email only into sign-in form"
-                    >
-                      {copiedKey === DEFAULT_STUDENT_ACCOUNT.email ? <Check className="w-3 h-3 text-emerald-400" /> : 'Use Email'}
-                    </button>
-                  </div>
-                </div>
               </div>
             </div>
           )}

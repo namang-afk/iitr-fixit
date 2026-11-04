@@ -114,3 +114,4 @@ export function verifyWardenCredentials(email: string, password: string): Warden
   if (AUTHORIZED_WARDEN_CREDENTIAL.password !== password.trim()) return null;
   return AUTHORIZED_WARDEN_CREDENTIAL;
 }
+
