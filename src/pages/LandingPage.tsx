@@ -20,6 +20,7 @@ import {
   FileText,
   LogIn,
   UserCheck,
+  UserPlus,
   Shield,
   LayoutDashboard
 } from 'lucide-react';
@@ -130,6 +131,14 @@ export const LandingPage: React.FC = () => {
                   >
                     <LogIn className="w-4 h-4 text-amber-300" />
                     <span>Sign In with IITR Mail</span>
+                  </Link>
+
+                  <Link
+                    to="/login?mode=signup"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl shadow-sm hover:shadow transition-all duration-200 active:scale-95 text-sm"
+                  >
+                    <UserPlus className="w-4 h-4 text-emerald-200" />
+                    <span>Sign Up as Student</span>
                   </Link>
 
                   <Link

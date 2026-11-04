@@ -120,24 +120,30 @@ docker run -d -p 80:80 --name iitr-fixit-app iitr-fixit
 
 ---
 
-## 👥 Demo Accounts & Pre-Loaded Personas
+## 👥 Authorized Credentials & Student Registration
 
-For evaluators and campus reviewers, one-click demo credentials are provided on the login page:
+> **Security Protocol**: All passwords must be entered manually by the user (no automatic password prefilling). Staff and Warden accounts are strictly restricted to the generated credentials below.
 
-1. **Resident / Student (`Aarav Sharma`)**
-   - **Email**: `aarav.sharma@me.iitr.ac.in`
-   - **Hostel / Room**: Rajendra Bhawan, `R-314`
-   - **Authorized**: File complaints, upload photos, track resolution timeline, message technicians, rate service.
+### 🎓 Students / Residents: Self Sign Up
+- Students can create an account using **Sign Up as Student** on `/login?mode=signup` with their official `@*.iitr.ac.in` email and Bhawan/room details.
+- **Pre-Registered Student (for quick testing)**:
+  - **Email**: `aarav.sharma@me.iitr.ac.in`
+  - **Password**: `Student@IITR1`
+  - **Location**: Rajendra Bhawan, `R-314`
 
-2. **Maintenance Staff (`Rajesh Kumar`)**
-   - **Email**: `rajesh.estate@iitr.ac.in`
-   - **Department**: Electrical Maintenance Unit
-   - **Authorized**: View assigned work orders, claim unassigned jobs, post internal technician notes, resolve repairs.
+### 🔧 Exactly 5 Generated Staff Accounts (Estate & Works Directorate)
+Staff access is strictly restricted to these 5 accounts and their generated passwords:
+1. **Electrical & Power**: `rajesh.estate@iitr.ac.in` — Password: `Staff@Elec1`
+2. **Plumbing & Water**: `suresh.waterworks@iitr.ac.in` — Password: `Staff@Plumb2`
+3. **Carpentry & Furniture**: `amit.carpentry@iitr.ac.in` — Password: `Staff@Carp3`
+4. **Internet & LAN / ICC**: `vikram.icc@iitr.ac.in` — Password: `Staff@Net4`
+5. **Civil Maintenance**: `ramesh.civil@iitr.ac.in` — Password: `Staff@Civil5`
 
-3. **Warden / Administrator (`Dr. P. K. Sen`)**
-   - **Email**: `warden.rajendra@iitr.ac.in`
-   - **Affiliation**: Council of Wardens / Estate Directorate
-   - **Authorized**: Campus-wide analytics, technician reassignments, SLA monitoring, hostel loads, CSV export.
+### 🏛️ Exactly 1 Generated Warden Account (Chief Warden & Estate Directorate)
+Warden administrative access is strictly restricted to:
+- **Email**: `warden.rajendra@iitr.ac.in`
+- **Password**: `Warden@IITR2026`
+- **Role**: Executive command center, technician reassignments, SLA monitoring, and hostel loads.
 
 ---
 

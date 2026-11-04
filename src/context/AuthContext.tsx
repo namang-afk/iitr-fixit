@@ -1,9 +1,17 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserProfile, UserRole } from '../types';
-import { DEMO_USERS } from '../constants';
+import { 
+  AUTHORIZED_STAFF_CREDENTIALS, 
+  AUTHORIZED_WARDEN_CREDENTIAL, 
+  verifyStaffCredentials, 
+  verifyWardenCredentials,
+  StudentAccount
+} from '../constants/authCredentials';
 import { 
   loadStoredSession, 
   saveStoredSession, 
+  registerStudentAccount,
+  verifyStudentCredentials,
   DATA_CHANGE_EVENT 
 } from '../services/storage';
 
@@ -11,9 +19,9 @@ interface AuthContextType {
   currentUser: UserProfile | null;
   currentRole: UserRole | null;
   isAuthenticated: boolean;
-  login: (email: string, role: UserRole, customDetails?: Partial<UserProfile>) => { success: boolean; error?: string };
+  login: (email: string, password: string, role: UserRole) => { success: boolean; error?: string };
+  signupStudent: (data: Omit<StudentAccount, 'id' | 'role' | 'createdAt'>) => { success: boolean; error?: string };
   logout: () => void;
-  switchRole: (role: UserRole) => void;
   isStudent: boolean;
   isStaff: boolean;
   isAdmin: boolean;
@@ -29,16 +37,8 @@ export function isValidIITREmail(email: string): boolean {
   return iitrRegex.test(trimmed);
 }
 
-// Derive a clean full name from email prefix (e.g. 'priya.sharma' -> 'Priya Sharma')
-function formatNameFromEmail(email: string): string {
-  const prefix = email.split('@')[0] || 'IITR Resident';
-  const parts = prefix.split(/[._-]/).filter(Boolean);
-  if (parts.length === 0) return 'IITR Member';
-  return parts.map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(' ');
-}
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Initialize with stored session if exists, otherwise null (unauthenticated by default for real portal feel)
+  // Initialize with stored session if exists, otherwise null
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => loadStoredSession());
 
   useEffect(() => {
@@ -56,49 +56,162 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = (
     email: string, 
-    role: UserRole, 
-    customDetails?: Partial<UserProfile>
+    password: string, 
+    role: UserRole
   ): { success: boolean; error?: string } => {
     const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
 
     if (!cleanEmail) {
-      return { success: false, error: 'Please enter your official IIT Roorkee email address.' };
+      return { success: false, error: 'Please enter your IIT Roorkee institutional email ID.' };
+    }
+
+    if (!cleanPassword) {
+      return { success: false, error: 'Please enter your account password.' };
     }
 
     if (!isValidIITREmail(cleanEmail)) {
       return { 
         success: false, 
-        error: 'Access restricted: Please use an authorized IIT Roorkee institutional email (e.g. yourname@iitr.ac.in or student@dept.iitr.ac.in).' 
+        error: 'Access restricted: Please enter a valid IIT Roorkee institutional email ending in @iitr.ac.in or @*.iitr.ac.in.' 
       };
     }
 
-    // Check if matches known demo records for automatic rich profile hydration
-    let profile: UserProfile;
+    // Role-specific authentication
+    if (role === 'staff') {
+      const staffMember = AUTHORIZED_STAFF_CREDENTIALS.find(s => s.email.toLowerCase() === cleanEmail);
+      if (!staffMember) {
+        return { 
+          success: false, 
+          error: 'Unauthorized Staff ID: Staff access is restricted strictly to the 5 authorized estate staff accounts.' 
+        };
+      }
 
-    if (role === 'student' && cleanEmail === DEMO_USERS.student.email.toLowerCase()) {
-      profile = { ...DEMO_USERS.student };
-    } else if (role === 'staff' && cleanEmail === DEMO_USERS.staff.email.toLowerCase()) {
-      profile = { ...DEMO_USERS.staff };
-    } else if (role === 'admin' && cleanEmail === DEMO_USERS.admin.email.toLowerCase()) {
-      profile = { ...DEMO_USERS.admin };
-    } else {
-      // Dynamic profile construction for custom IITR email
-      const generatedName = customDetails?.name?.trim() || formatNameFromEmail(cleanEmail);
-      profile = {
-        id: `user_${role}_${Date.now()}`,
-        name: generatedName,
-        role: role,
-        email: cleanEmail,
-        phone: customDetails?.phone || '+91 98765 00000',
-        hostel: role === 'student' ? (customDetails?.hostel || 'Rajendra Bhawan') : undefined,
-        room: role === 'student' ? (customDetails?.room || 'R-101') : undefined,
-        enrollmentNo: role === 'student' ? (customDetails?.enrollmentNo || '23115000') : undefined,
-        department: role !== 'student' 
-          ? (customDetails?.department || (role === 'staff' ? 'Estate & Works Maintenance' : 'Council of Wardens')) 
-          : 'Department of Architecture and Planning',
-        ...customDetails
+      if (staffMember.password !== cleanPassword) {
+        return { 
+          success: false, 
+          error: 'Incorrect staff password. Please enter the assigned password for this staff member.' 
+        };
+      }
+
+      const profile: UserProfile = {
+        id: staffMember.id,
+        name: staffMember.name,
+        role: 'staff',
+        email: staffMember.email,
+        phone: staffMember.phone,
+        department: staffMember.department
+      };
+
+      setCurrentUser(profile);
+      saveStoredSession(profile);
+      return { success: true };
+    }
+
+    if (role === 'admin') {
+      if (cleanEmail !== AUTHORIZED_WARDEN_CREDENTIAL.email.toLowerCase()) {
+        return { 
+          success: false, 
+          error: 'Unauthorized Warden ID: Chief Warden & Estate administration is restricted to authorized credentials.' 
+        };
+      }
+
+      if (AUTHORIZED_WARDEN_CREDENTIAL.password !== cleanPassword) {
+        return { 
+          success: false, 
+          error: 'Incorrect warden password. Access denied.' 
+        };
+      }
+
+      const profile: UserProfile = {
+        id: AUTHORIZED_WARDEN_CREDENTIAL.id,
+        name: AUTHORIZED_WARDEN_CREDENTIAL.name,
+        role: 'admin',
+        email: AUTHORIZED_WARDEN_CREDENTIAL.email,
+        phone: AUTHORIZED_WARDEN_CREDENTIAL.phone,
+        department: AUTHORIZED_WARDEN_CREDENTIAL.department
+      };
+
+      setCurrentUser(profile);
+      saveStoredSession(profile);
+      return { success: true };
+    }
+
+    if (role === 'student') {
+      const result = verifyStudentCredentials(cleanEmail, cleanPassword);
+      if (!result.success || !result.student) {
+        return { 
+          success: false, 
+          error: result.error || 'Invalid student credentials. If you have not registered yet, please click Sign Up.' 
+        };
+      }
+
+      const student = result.student;
+      const profile: UserProfile = {
+        id: student.id,
+        name: student.name,
+        role: 'student',
+        email: student.email,
+        phone: student.phone,
+        hostel: student.hostel,
+        room: student.room,
+        enrollmentNo: student.enrollmentNo,
+        department: student.department
+      };
+
+      setCurrentUser(profile);
+      saveStoredSession(profile);
+      return { success: true };
+    }
+
+    return { success: false, error: 'Unknown role selected.' };
+  };
+
+  const signupStudent = (
+    data: Omit<StudentAccount, 'id' | 'role' | 'createdAt'>
+  ): { success: boolean; error?: string } => {
+    const cleanEmail = data.email.trim().toLowerCase();
+
+    if (!cleanEmail) {
+      return { success: false, error: 'Please enter your IIT Roorkee institutional email ID.' };
+    }
+
+    if (!isValidIITREmail(cleanEmail)) {
+      return { 
+        success: false, 
+        error: 'Please enter a valid IIT Roorkee email ending in @iitr.ac.in or @*.iitr.ac.in (e.g. name@me.iitr.ac.in).' 
       };
     }
+
+    if (!data.name.trim()) {
+      return { success: false, error: 'Please provide your full name.' };
+    }
+
+    if (!data.password || data.password.trim().length < 6) {
+      return { success: false, error: 'Password must be at least 6 characters long.' };
+    }
+
+    if (!data.hostel || !data.room) {
+      return { success: false, error: 'Please provide your current Bhawan/Hostel and Room number.' };
+    }
+
+    const regResult = registerStudentAccount(data);
+    if (!regResult.success || !regResult.student) {
+      return { success: false, error: regResult.error || 'Failed to register student account.' };
+    }
+
+    const student = regResult.student;
+    const profile: UserProfile = {
+      id: student.id,
+      name: student.name,
+      role: 'student',
+      email: student.email,
+      phone: student.phone,
+      hostel: student.hostel,
+      room: student.room,
+      enrollmentNo: student.enrollmentNo,
+      department: student.department
+    };
 
     setCurrentUser(profile);
     saveStoredSession(profile);
@@ -110,13 +223,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     saveStoredSession(null);
   };
 
-  const switchRole = (role: UserRole) => {
-    // If user wants to switch role directly using presets:
-    const preset = DEMO_USERS[role] || DEMO_USERS.student;
-    setCurrentUser(preset);
-    saveStoredSession(preset);
-  };
-
   const currentRole = currentUser ? currentUser.role : null;
 
   return (
@@ -126,8 +232,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         currentRole,
         isAuthenticated: !!currentUser,
         login,
+        signupStudent,
         logout,
-        switchRole,
         isStudent: currentRole === 'student',
         isStaff: currentRole === 'staff',
         isAdmin: currentRole === 'admin',

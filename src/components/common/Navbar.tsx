@@ -14,7 +14,8 @@ import {
   Shield,
   Briefcase,
   LogOut,
-  LogIn
+  LogIn,
+  UserPlus
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -166,6 +167,13 @@ export const Navbar: React.FC = () => {
                   className="px-3 py-2 text-stone-600 hover:text-stone-900 text-xs font-semibold"
                 >
                   Track Ticket
+                </Link>
+                <Link
+                  to="/login?mode=signup"
+                  className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 text-emerald-800 hover:text-emerald-950 text-xs font-semibold hover:bg-emerald-50 rounded-lg transition-colors"
+                >
+                  <UserPlus className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Student Sign Up</span>
                 </Link>
                 <Link
                   to="/login"

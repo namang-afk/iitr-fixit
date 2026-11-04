@@ -3,7 +3,12 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth, isValidIITREmail } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { UserRole } from '../types';
-import { DEMO_USERS, IITR_HOSTELS } from '../constants';
+import { IITR_HOSTELS } from '../constants';
+import { 
+  AUTHORIZED_STAFF_CREDENTIALS, 
+  AUTHORIZED_WARDEN_CREDENTIAL,
+  DEFAULT_STUDENT_ACCOUNT 
+} from '../constants/authCredentials';
 import { 
   Wrench, 
   UserCheck, 
@@ -15,24 +20,46 @@ import {
   AlertCircle, 
   Sparkles,
   Info,
-  ShieldAlert,
-  Home
+  Eye,
+  EyeOff,
+  UserPlus,
+  LogIn,
+  KeyRound,
+  Check,
+  User
 } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const { login, signupStudent } = useAuth();
   const { success, error } = useToast();
 
+  // Mode: 'signin' | 'signup'
+  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
+
+  // Sign in form state - ABSOLUTELY NO AUTOMATIC / PREFILLED PASSWORDS
   const [selectedRole, setSelectedRole] = useState<UserRole>('student');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('campus@iitr2026');
-  const [hostel, setHostel] = useState('Rajendra Bhawan');
-  const [roomNumber, setRoomNumber] = useState('R-314');
-  const [name, setName] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Student Sign up form state
+  const [signupName, setSignupName] = useState('');
+  const [signupEmail, setSignupEmail] = useState('');
+  const [signupHostel, setSignupHostel] = useState('Rajendra Bhawan');
+  const [signupRoom, setSignupRoom] = useState('');
+  const [signupEnrollment, setSignupEnrollment] = useState('');
+  const [signupPhone, setSignupPhone] = useState('');
+  const [signupPassword, setSignupPassword] = useState('');
+  const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
+
+  // UI state
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [showCredentialsReference, setShowCredentialsReference] = useState(true);
 
   // Read return URL from state if user was redirected from a protected route
   const from = (location.state as any)?.from?.pathname || '/dashboard';
@@ -40,33 +67,35 @@ export const LoginPage: React.FC = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const roleParam = params.get('role');
-    if (roleParam === 'staff' || roleParam === 'admin' || roleParam === 'student') {
-      handleRoleSelect(roleParam as UserRole);
+    const modeParam = params.get('mode');
+
+    if (modeParam === 'signup') {
+      setAuthMode('signup');
+    } else if (roleParam === 'staff' || roleParam === 'admin' || roleParam === 'student') {
+      setSelectedRole(roleParam as UserRole);
+      setAuthMode('signin');
     }
   }, [location.search]);
 
+  // When changing roles, clear password and error message
   const handleRoleSelect = (role: UserRole) => {
     setSelectedRole(role);
+    setPassword('');
     setErrorMessage('');
-    // Preload representative email placeholder
-    if (role === 'student') {
-      setEmail('aarav.sharma@me.iitr.ac.in');
-      setName('Aarav Sharma');
-    } else if (role === 'staff') {
-      setEmail('rajesh.estate@iitr.ac.in');
-      setName('Rajesh Kumar');
-    } else {
-      setEmail('warden.rajendra@iitr.ac.in');
-      setName('Dr. P. K. Sen');
-    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Handle Sign In submission
+  const handleSignIn = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
 
     if (!email.trim()) {
-      setErrorMessage('Please enter your IIT Roorkee institutional email.');
+      setErrorMessage('Please enter your IIT Roorkee institutional email ID.');
+      return;
+    }
+
+    if (!password.trim()) {
+      setErrorMessage('Please enter your password.');
       return;
     }
 
@@ -77,11 +106,7 @@ export const LoginPage: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      const res = login(email, selectedRole, {
-        name: name.trim() || undefined,
-        hostel: selectedRole === 'student' ? hostel : undefined,
-        room: selectedRole === 'student' ? roomNumber : undefined,
-      });
+      const res = login(email, password, selectedRole);
 
       if (res.success) {
         success('Authentication Verified', `Logged in as ${selectedRole.toUpperCase()} • Welcome to IITR FixIt.`);
@@ -95,23 +120,79 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const handleQuickDemoLogin = (role: UserRole) => {
-    const demo = DEMO_USERS[role];
-    const res = login(demo.email, role, {
-      name: demo.name,
-      hostel: demo.hostel,
-      room: demo.room,
-      department: demo.department
-    });
-    if (res.success) {
-      success('Instant Access Granted', `Logged in as ${demo.name} (${role.toUpperCase()})`);
-      navigate(from, { replace: true });
+  // Handle Student Sign Up submission
+  const handleSignUp = (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage('');
+
+    if (!signupName.trim()) {
+      setErrorMessage('Please provide your full name.');
+      return;
     }
+
+    if (!signupEmail.trim()) {
+      setErrorMessage('Please enter your IIT Roorkee institutional email ID.');
+      return;
+    }
+
+    if (!isValidIITREmail(signupEmail)) {
+      setErrorMessage('Invalid domain: Student accounts must use an IIT Roorkee email ending in @iitr.ac.in or @*.iitr.ac.in (e.g. name@me.iitr.ac.in).');
+      return;
+    }
+
+    if (!signupHostel.trim() || !signupRoom.trim()) {
+      setErrorMessage('Please specify your current Bhawan/Hostel and Room number.');
+      return;
+    }
+
+    if (!signupPassword || signupPassword.length < 6) {
+      setErrorMessage('Password must be at least 6 characters long.');
+      return;
+    }
+
+    if (signupPassword !== signupConfirmPassword) {
+      setErrorMessage('Passwords do not match. Please re-enter your password.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const res = signupStudent({
+        name: signupName.trim(),
+        email: signupEmail.trim(),
+        hostel: signupHostel,
+        room: signupRoom.trim(),
+        enrollmentNo: signupEnrollment.trim() || undefined,
+        phone: signupPhone.trim() || '+91 98765 00000',
+        password: signupPassword.trim()
+      });
+
+      if (res.success) {
+        success('Registration Successful', `Welcome ${signupName}! Your resident account has been created.`);
+        navigate(from, { replace: true });
+      } else {
+        setErrorMessage(res.error || 'Registration failed. Please check your details.');
+        error('Registration Failed', res.error);
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Populate ONLY the email into the sign-in form (leaves password blank so user types it)
+  const handleUseEmail = (presetEmail: string, role: UserRole) => {
+    setAuthMode('signin');
+    setSelectedRole(role);
+    setEmail(presetEmail);
+    setPassword('');
+    setErrorMessage('');
+    setCopiedKey(presetEmail);
+    setTimeout(() => setCopiedKey(null), 2000);
   };
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-6">
+      <div className="max-w-xl w-full space-y-6">
         {/* Top Header & Branding */}
         <div className="text-center space-y-3">
           <Link to="/" className="inline-flex items-center gap-2.5 group">
@@ -130,63 +211,54 @@ export const LoginPage: React.FC = () => {
 
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-stone-900 tracking-tight">
-              Single Sign-On (SSO) Portal
+              {authMode === 'signin' ? 'Campus Portal Authentication' : 'New Resident Registration'}
             </h1>
             <p className="text-xs text-stone-600 mt-1">
-              Select your campus role and authenticate with your institutional email.
+              {authMode === 'signin' 
+                ? 'Sign in using your institutional IIT Roorkee credentials.' 
+                : 'Students and campus residents can register their room profile below.'}
             </p>
           </div>
         </div>
 
-        {/* Login Card */}
+        {/* Auth Mode Toggle Bar */}
+        <div className="flex rounded-2xl p-1 bg-stone-200/70 border border-stone-300 max-w-sm mx-auto">
+          <button
+            type="button"
+            onClick={() => {
+              setAuthMode('signin');
+              setErrorMessage('');
+              setPassword('');
+            }}
+            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+              authMode === 'signin'
+                ? 'bg-white text-stone-900 shadow-xs'
+                : 'text-stone-600 hover:text-stone-900'
+            }`}
+          >
+            <LogIn className="w-3.5 h-3.5 text-[#7A1528]" />
+            <span>Sign In</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setAuthMode('signup');
+              setErrorMessage('');
+            }}
+            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+              authMode === 'signup'
+                ? 'bg-white text-stone-900 shadow-xs'
+                : 'text-stone-600 hover:text-stone-900'
+            }`}
+          >
+            <UserPlus className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Sign Up as Student</span>
+          </button>
+        </div>
+
+        {/* Main Card */}
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-md space-y-6">
-          {/* Role Tabs */}
-          <div>
-            <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">
-              Select Campus Persona
-            </label>
-            <div className="grid grid-cols-3 gap-1.5 p-1 bg-stone-100 rounded-xl border border-stone-200">
-              <button
-                type="button"
-                onClick={() => handleRoleSelect('student')}
-                className={`py-2 px-1 text-center rounded-lg text-xs font-bold transition-all flex flex-col items-center gap-1 ${
-                  selectedRole === 'student'
-                    ? 'bg-[#7A1528] text-white shadow-xs'
-                    : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
-                }`}
-              >
-                <UserCheck className="w-4 h-4" />
-                <span className="truncate">Resident</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleRoleSelect('staff')}
-                className={`py-2 px-1 text-center rounded-lg text-xs font-bold transition-all flex flex-col items-center gap-1 ${
-                  selectedRole === 'staff'
-                    ? 'bg-[#7A1528] text-white shadow-xs'
-                    : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
-                }`}
-              >
-                <Wrench className="w-4 h-4" />
-                <span className="truncate">Staff</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleRoleSelect('admin')}
-                className={`py-2 px-1 text-center rounded-lg text-xs font-bold transition-all flex flex-col items-center gap-1 ${
-                  selectedRole === 'admin'
-                    ? 'bg-[#7A1528] text-white shadow-xs'
-                    : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
-                }`}
-              >
-                <ShieldCheck className="w-4 h-4" />
-                <span className="truncate">Warden</span>
-              </button>
-            </div>
-          </div>
-
           {/* Error Banner */}
           {errorMessage && (
             <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 flex items-start gap-2.5 animate-in fade-in duration-200">
@@ -195,162 +267,478 @@ export const LoginPage: React.FC = () => {
             </div>
           )}
 
-          {/* Login Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Full Name (optional) */}
-            <div>
-              <label className="block text-xs font-semibold text-stone-700 mb-1">
-                Full Name
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={selectedRole === 'student' ? 'e.g. Aarav Sharma' : selectedRole === 'staff' ? 'e.g. Rajesh Kumar' : 'e.g. Dr. P. K. Sen'}
-                className="w-full px-3.5 py-2.5 bg-stone-50 rounded-xl border border-stone-300 text-xs text-stone-900 focus:bg-white focus:border-[#7A1528] focus:ring-2 focus:ring-[#7A1528]/10 focus:outline-hidden"
-              />
-            </div>
-
-            {/* Email Address */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-semibold text-stone-700">
-                  IIT Roorkee Email Address <span className="text-rose-500">*</span>
+          {/* MODE 1: SIGN IN FORM */}
+          {authMode === 'signin' && (
+            <div className="space-y-6">
+              {/* Role Tabs */}
+              <div>
+                <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">
+                  Select Portal Role
                 </label>
-                <span className="text-[10px] text-stone-400 font-mono">@*.iitr.ac.in</span>
-              </div>
-              <div className="relative">
-                <Mail className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    if (errorMessage) setErrorMessage('');
-                  }}
-                  placeholder={selectedRole === 'student' ? 'yourname@me.iitr.ac.in' : 'yourname@iitr.ac.in'}
-                  className="w-full pl-9 pr-3.5 py-2.5 bg-stone-50 rounded-xl border border-stone-300 text-xs text-stone-900 focus:bg-white focus:border-[#7A1528] focus:ring-2 focus:ring-[#7A1528]/10 focus:outline-hidden"
-                />
-              </div>
-            </div>
-
-            {/* Password / Passcode */}
-            <div>
-              <label className="block text-xs font-semibold text-stone-700 mb-1">
-                Campus Portal Password / SSO PIN
-              </label>
-              <div className="relative">
-                <Lock className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full pl-9 pr-3.5 py-2.5 bg-stone-50 rounded-xl border border-stone-300 text-xs text-stone-900 focus:bg-white focus:border-[#7A1528] focus:ring-2 focus:ring-[#7A1528]/10 focus:outline-hidden"
-                />
-              </div>
-            </div>
-
-            {/* Student specific fields */}
-            {selectedRole === 'student' && (
-              <div className="grid grid-cols-2 gap-3 pt-1">
-                <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
-                    Hostel / Bhawan
-                  </label>
-                  <select
-                    value={hostel}
-                    onChange={(e) => setHostel(e.target.value)}
-                    className="w-full px-2.5 py-2 bg-stone-50 rounded-xl border border-stone-300 text-xs text-stone-900"
+                <div className="grid grid-cols-3 gap-1.5 p-1 bg-stone-100 rounded-xl border border-stone-200">
+                  <button
+                    type="button"
+                    onClick={() => handleRoleSelect('student')}
+                    className={`py-2 px-1 text-center rounded-lg text-xs font-bold transition-all flex flex-col items-center gap-1 ${
+                      selectedRole === 'student'
+                        ? 'bg-[#7A1528] text-white shadow-xs'
+                        : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
+                    }`}
                   >
-                    {IITR_HOSTELS.map(h => (
-                      <option key={h.id} value={h.name}>{h.name}</option>
-                    ))}
-                  </select>
+                    <UserCheck className="w-4 h-4" />
+                    <span className="truncate">Resident</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleRoleSelect('staff')}
+                    className={`py-2 px-1 text-center rounded-lg text-xs font-bold transition-all flex flex-col items-center gap-1 ${
+                      selectedRole === 'staff'
+                        ? 'bg-[#7A1528] text-white shadow-xs'
+                        : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
+                    }`}
+                  >
+                    <Wrench className="w-4 h-4" />
+                    <span className="truncate">Staff (5 Accounts)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleRoleSelect('admin')}
+                    className={`py-2 px-1 text-center rounded-lg text-xs font-bold transition-all flex flex-col items-center gap-1 ${
+                      selectedRole === 'admin'
+                        ? 'bg-[#7A1528] text-white shadow-xs'
+                        : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
+                    }`}
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    <span className="truncate">Warden (1 Account)</span>
+                  </button>
                 </div>
+
+                {/* Role instructions */}
+                <p className="text-[11px] text-stone-500 mt-2">
+                  {selectedRole === 'student' && 'Students can log in with their registered account. First-time residents should click "Sign Up as Student".'}
+                  {selectedRole === 'staff' && 'Staff access is strictly restricted to the 5 authorized estate maintenance IDs & passwords.'}
+                  {selectedRole === 'admin' && 'Warden access is strictly restricted to the authorized Chief Warden ID & password.'}
+                </p>
+              </div>
+
+              {/* Login Form */}
+              <form onSubmit={handleSignIn} className="space-y-4">
+                {/* Email Address */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-stone-700">
+                      IIT Roorkee Email Address <span className="text-rose-500">*</span>
+                    </label>
+                    <span className="text-[10px] text-stone-400 font-mono">@*.iitr.ac.in</span>
+                  </div>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        if (errorMessage) setErrorMessage('');
+                      }}
+                      placeholder={
+                        selectedRole === 'student' 
+                          ? 'e.g. aarav.sharma@me.iitr.ac.in' 
+                          : selectedRole === 'staff' 
+                          ? 'e.g. rajesh.estate@iitr.ac.in' 
+                          : 'warden.rajendra@iitr.ac.in'
+                      }
+                      className="w-full pl-9 pr-3.5 py-2.5 bg-stone-50 rounded-xl border border-stone-300 text-xs text-stone-900 focus:bg-white focus:border-[#7A1528] focus:ring-2 focus:ring-[#7A1528]/10 focus:outline-hidden"
+                    />
+                  </div>
+                </div>
+
+                {/* Password - NO AUTOMATIC PASSWORDS */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-stone-700">
+                      Password <span className="text-rose-500">*</span>
+                    </label>
+                    <span className="text-[10px] text-stone-400">Type password manually</span>
+                  </div>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        if (errorMessage) setErrorMessage('');
+                      }}
+                      placeholder="Enter password..."
+                      className="w-full pl-9 pr-10 py-2.5 bg-stone-50 rounded-xl border border-stone-300 text-xs text-stone-900 focus:bg-white focus:border-[#7A1528] focus:ring-2 focus:ring-[#7A1528]/10 focus:outline-hidden font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 p-1"
+                      title={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full py-3 px-4 bg-[#7A1528] hover:bg-[#621323] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all flex items-center justify-center gap-2 active:scale-95 disabled:bg-stone-400 mt-2"
+                >
+                  <span>{isSubmitting ? 'Authenticating...' : `Sign in as ${selectedRole.toUpperCase()}`}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </form>
+
+              {/* Student Sign Up Link prompt */}
+              {selectedRole === 'student' && (
+                <div className="pt-2 text-center text-xs text-stone-600">
+                  <span>Don't have an account yet? </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthMode('signup');
+                      setErrorMessage('');
+                    }}
+                    className="font-bold text-[#7A1528] hover:underline"
+                  >
+                    Sign Up as a Student / Resident ➔
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* MODE 2: STUDENT SIGN UP FORM */}
+          {authMode === 'signup' && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900">
+                <UserPlus className="w-4 h-4 text-emerald-700 flex-shrink-0" />
+                <span>
+                  Resident accounts allow you to report room repairs, upload photos, track resolution in real-time, and provide verified sign-off ratings.
+                </span>
+              </div>
+
+              <form onSubmit={handleSignUp} className="space-y-3.5">
+                {/* Full Name */}
                 <div>
                   <label className="block text-xs font-semibold text-stone-700 mb-1">
-                    Room No.
+                    Full Name <span className="text-rose-500">*</span>
                   </label>
-                  <input
-                    type="text"
-                    value={roomNumber}
-                    onChange={(e) => setRoomNumber(e.target.value)}
-                    placeholder="R-314"
-                    className="w-full px-3 py-2 bg-stone-50 rounded-xl border border-stone-300 text-xs text-stone-900"
-                  />
+                  <div className="relative">
+                    <User className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      required
+                      value={signupName}
+                      onChange={(e) => setSignupName(e.target.value)}
+                      placeholder="e.g. Rohan Gupta"
+                      className="w-full pl-9 pr-3.5 py-2.5 bg-stone-50 rounded-xl border border-stone-300 text-xs text-stone-900 focus:bg-white focus:border-[#7A1528] focus:ring-2 focus:ring-[#7A1528]/10 focus:outline-hidden"
+                    />
+                  </div>
+                </div>
+
+                {/* IITR Email */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-stone-700">
+                      IIT Roorkee Email Address <span className="text-rose-500">*</span>
+                    </label>
+                    <span className="text-[10px] text-stone-400 font-mono">@*.iitr.ac.in</span>
+                  </div>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="email"
+                      required
+                      value={signupEmail}
+                      onChange={(e) => setSignupEmail(e.target.value)}
+                      placeholder="e.g. rohan.gupta@cs.iitr.ac.in"
+                      className="w-full pl-9 pr-3.5 py-2.5 bg-stone-50 rounded-xl border border-stone-300 text-xs text-stone-900 focus:bg-white focus:border-[#7A1528] focus:ring-2 focus:ring-[#7A1528]/10 focus:outline-hidden"
+                    />
+                  </div>
+                </div>
+
+                {/* Hostel & Room */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 mb-1">
+                      Hostel / Bhawan <span className="text-rose-500">*</span>
+                    </label>
+                    <select
+                      value={signupHostel}
+                      onChange={(e) => setSignupHostel(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-stone-50 rounded-xl border border-stone-300 text-xs text-stone-900 focus:bg-white focus:border-[#7A1528]"
+                    >
+                      {IITR_HOSTELS.map(h => (
+                        <option key={h.id} value={h.name}>{h.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 mb-1">
+                      Room Number <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={signupRoom}
+                      onChange={(e) => setSignupRoom(e.target.value)}
+                      placeholder="e.g. R-214 or Wing B-105"
+                      className="w-full px-3 py-2.5 bg-stone-50 rounded-xl border border-stone-300 text-xs text-stone-900 focus:bg-white focus:border-[#7A1528]"
+                    />
+                  </div>
+                </div>
+
+                {/* Enrollment & Phone (Optional) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 mb-1">
+                      Enrollment / Student ID
+                    </label>
+                    <input
+                      type="text"
+                      value={signupEnrollment}
+                      onChange={(e) => setSignupEnrollment(e.target.value)}
+                      placeholder="e.g. 23115088"
+                      className="w-full px-3 py-2.5 bg-stone-50 rounded-xl border border-stone-300 text-xs text-stone-900 focus:bg-white focus:border-[#7A1528]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 mb-1">
+                      Mobile Number
+                    </label>
+                    <input
+                      type="tel"
+                      value={signupPhone}
+                      onChange={(e) => setSignupPhone(e.target.value)}
+                      placeholder="+91 98765 43210"
+                      className="w-full px-3 py-2.5 bg-stone-50 rounded-xl border border-stone-300 text-xs text-stone-900 focus:bg-white focus:border-[#7A1528]"
+                    />
+                  </div>
+                </div>
+
+                {/* Password & Confirm Password */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 mb-1">
+                      Create Password <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Lock className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type={showSignupPassword ? 'text' : 'password'}
+                        required
+                        value={signupPassword}
+                        onChange={(e) => setSignupPassword(e.target.value)}
+                        placeholder="Min 6 characters"
+                        className="w-full pl-9 pr-8 py-2.5 bg-stone-50 rounded-xl border border-stone-300 text-xs text-stone-900 focus:bg-white focus:border-[#7A1528] font-mono"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowSignupPassword(!showSignupPassword)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+                      >
+                        {showSignupPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 mb-1">
+                      Confirm Password <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <Lock className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type={showSignupPassword ? 'text' : 'password'}
+                        required
+                        value={signupConfirmPassword}
+                        onChange={(e) => setSignupConfirmPassword(e.target.value)}
+                        placeholder="Re-type password"
+                        className="w-full pl-9 pr-3.5 py-2.5 bg-stone-50 rounded-xl border border-stone-300 text-xs text-stone-900 focus:bg-white focus:border-[#7A1528] font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Submit Registration */}
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full py-3 px-4 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all flex items-center justify-center gap-2 active:scale-95 disabled:bg-stone-400 mt-2"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span>{isSubmitting ? 'Registering Account...' : 'Create Resident Account & Enter Portal'}</span>
+                </button>
+              </form>
+
+              <div className="pt-2 text-center text-xs text-stone-600">
+                <span>Already have a registered resident account? </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode('signin');
+                    setSelectedRole('student');
+                    setErrorMessage('');
+                  }}
+                  className="font-bold text-[#7A1528] hover:underline"
+                >
+                  Sign In here ➔
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* AUTHORIZED CREDENTIALS REFERENCE TABLE */}
+        <div className="bg-white rounded-3xl p-5 sm:p-6 border border-stone-200/90 shadow-xs space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <KeyRound className="w-4 h-4 text-[#7A1528]" />
+              <h2 className="text-xs font-bold text-stone-900 uppercase tracking-wider">
+                Authorized Staff & Warden Credentials
+              </h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowCredentialsReference(!showCredentialsReference)}
+              className="text-[11px] font-semibold text-[#7A1528] hover:underline"
+            >
+              {showCredentialsReference ? 'Hide' : 'Show'}
+            </button>
+          </div>
+
+          <p className="text-[11px] text-stone-500 leading-relaxed">
+            Staff and Warden accounts are strictly provisioned. They can log in <strong>only</strong> through these generated credentials. <em>(Passwords must be typed manually).</em>
+          </p>
+
+          {showCredentialsReference && (
+            <div className="space-y-4 pt-1">
+              {/* 5 Staff Accounts */}
+              <div>
+                <div className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-2 flex items-center gap-1.5">
+                  <Wrench className="w-3 h-3 text-blue-600" />
+                  <span>5 Generated Staff Accounts (Estate & Works Directorate)</span>
+                </div>
+                <div className="space-y-1.5">
+                  {AUTHORIZED_STAFF_CREDENTIALS.map((s, idx) => (
+                    <div 
+                      key={s.id}
+                      className="p-2.5 bg-stone-50 hover:bg-stone-100/80 rounded-xl border border-stone-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                    >
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-stone-900">{idx + 1}. {s.name}</span>
+                          <span className="text-[10px] font-medium bg-blue-50 text-blue-800 px-1.5 py-0.2 rounded border border-blue-200">
+                            {s.specialty}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-stone-500 font-mono mt-0.5">
+                          ID: <span className="text-stone-700 font-semibold">{s.email}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 sm:self-center">
+                        <div className="text-[11px] font-mono bg-white px-2 py-1 rounded-md border border-stone-300 text-stone-700">
+                          Password: <strong className="text-stone-900">{s.password}</strong>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleUseEmail(s.email, 'staff')}
+                          className="px-2 py-1 bg-stone-800 hover:bg-stone-900 text-white text-[10px] font-semibold rounded-lg transition-colors"
+                          title="Fills email only into sign-in form"
+                        >
+                          {copiedKey === s.email ? <Check className="w-3 h-3 text-emerald-400" /> : 'Use Email'}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            )}
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full py-3 px-4 bg-[#7A1528] hover:bg-[#621323] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow transition-all flex items-center justify-center gap-2 active:scale-95 disabled:bg-stone-400 mt-2"
-            >
-              <span>{isSubmitting ? 'Verifying Credentials...' : `Sign in as ${selectedRole.toUpperCase()}`}</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </form>
+              {/* 1 Warden Account */}
+              <div>
+                <div className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-2 flex items-center gap-1.5">
+                  <ShieldCheck className="w-3 h-3 text-purple-600" />
+                  <span>1 Generated Warden Account (Chief Warden & Estate Council)</span>
+                </div>
+                <div className="p-2.5 bg-stone-50 hover:bg-stone-100/80 rounded-xl border border-stone-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-stone-900">{AUTHORIZED_WARDEN_CREDENTIAL.name}</span>
+                      <span className="text-[10px] font-medium bg-purple-50 text-purple-800 px-1.5 py-0.2 rounded border border-purple-200">
+                        Chief Warden
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-stone-500 font-mono mt-0.5">
+                      ID: <span className="text-stone-700 font-semibold">{AUTHORIZED_WARDEN_CREDENTIAL.email}</span>
+                    </div>
+                  </div>
 
-          {/* Quick 1-Click Demo Login Presets */}
-          <div className="pt-4 border-t border-stone-100 space-y-2.5">
-            <div className="flex items-center gap-1.5 text-[11px] font-bold text-stone-500 uppercase tracking-wider">
-              <Sparkles className="w-3.5 h-3.5 text-[#7A1528]" />
-              <span>Instant Evaluator / Server Demo Accounts</span>
+                  <div className="flex items-center gap-2 sm:self-center">
+                    <div className="text-[11px] font-mono bg-white px-2 py-1 rounded-md border border-stone-300 text-stone-700">
+                      Password: <strong className="text-stone-900">{AUTHORIZED_WARDEN_CREDENTIAL.password}</strong>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleUseEmail(AUTHORIZED_WARDEN_CREDENTIAL.email, 'admin')}
+                      className="px-2 py-1 bg-stone-800 hover:bg-stone-900 text-white text-[10px] font-semibold rounded-lg transition-colors"
+                      title="Fills email only into sign-in form"
+                    >
+                      {copiedKey === AUTHORIZED_WARDEN_CREDENTIAL.email ? <Check className="w-3 h-3 text-emerald-400" /> : 'Use Email'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pre-registered Student Account */}
+              <div>
+                <div className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-2 flex items-center gap-1.5">
+                  <UserCheck className="w-3 h-3 text-emerald-600" />
+                  <span>Pre-Registered Student (Or Register Your Own via Sign Up)</span>
+                </div>
+                <div className="p-2.5 bg-stone-50 hover:bg-stone-100/80 rounded-xl border border-stone-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-stone-900">{DEFAULT_STUDENT_ACCOUNT.name}</span>
+                      <span className="text-[10px] font-medium bg-emerald-50 text-emerald-800 px-1.5 py-0.2 rounded border border-emerald-200">
+                        {DEFAULT_STUDENT_ACCOUNT.hostel} • {DEFAULT_STUDENT_ACCOUNT.room}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-stone-500 font-mono mt-0.5">
+                      ID: <span className="text-stone-700 font-semibold">{DEFAULT_STUDENT_ACCOUNT.email}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 sm:self-center">
+                    <div className="text-[11px] font-mono bg-white px-2 py-1 rounded-md border border-stone-300 text-stone-700">
+                      Password: <strong className="text-stone-900">{DEFAULT_STUDENT_ACCOUNT.password}</strong>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleUseEmail(DEFAULT_STUDENT_ACCOUNT.email, 'student')}
+                      className="px-2 py-1 bg-stone-800 hover:bg-stone-900 text-white text-[10px] font-semibold rounded-lg transition-colors"
+                      title="Fills email only into sign-in form"
+                    >
+                      {copiedKey === DEFAULT_STUDENT_ACCOUNT.email ? <Check className="w-3 h-3 text-emerald-400" /> : 'Use Email'}
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="grid grid-cols-1 gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickDemoLogin('student')}
-                className="w-full p-2.5 bg-stone-50 hover:bg-[#FDF2F4] border border-stone-200 hover:border-[#f9d0d9] rounded-xl text-left flex items-center justify-between text-xs transition-colors group"
-              >
-                <div>
-                  <span className="font-bold text-stone-900 group-hover:text-[#7A1528]">
-                    Aarav Sharma
-                  </span>
-                  <p className="text-[10px] text-stone-500">Student • Rajendra R-314 (aarav.sharma@me.iitr.ac.in)</p>
-                </div>
-                <span className="text-[10px] font-bold text-[#7A1528] bg-white px-2 py-0.5 rounded border border-stone-200">
-                  Login ➔
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickDemoLogin('staff')}
-                className="w-full p-2.5 bg-stone-50 hover:bg-blue-50 border border-stone-200 hover:border-blue-200 rounded-xl text-left flex items-center justify-between text-xs transition-colors group"
-              >
-                <div>
-                  <span className="font-bold text-stone-900 group-hover:text-blue-900">
-                    Rajesh Kumar
-                  </span>
-                  <p className="text-[10px] text-stone-500">Staff • Electrical Wing (rajesh.estate@iitr.ac.in)</p>
-                </div>
-                <span className="text-[10px] font-bold text-blue-700 bg-white px-2 py-0.5 rounded border border-stone-200">
-                  Login ➔
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickDemoLogin('admin')}
-                className="w-full p-2.5 bg-stone-50 hover:bg-purple-50 border border-stone-200 hover:border-purple-200 rounded-xl text-left flex items-center justify-between text-xs transition-colors group"
-              >
-                <div>
-                  <span className="font-bold text-stone-900 group-hover:text-purple-900">
-                    Dr. P. K. Sen
-                  </span>
-                  <p className="text-[10px] text-stone-500">Warden / Admin • Estate Council (warden.rajendra@iitr.ac.in)</p>
-                </div>
-                <span className="text-[10px] font-bold text-purple-700 bg-white px-2 py-0.5 rounded border border-stone-200">
-                  Login ➔
-                </span>
-              </button>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Security & Access Information */}

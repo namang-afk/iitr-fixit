@@ -1,11 +1,13 @@
 import { RequestItem, StaffMember, UserProfile, UserRole } from '../types';
 import { INITIAL_REQUESTS, INITIAL_STAFF } from './seedData';
+import { StudentAccount, DEFAULT_STUDENT_ACCOUNT } from '../constants/authCredentials';
 
 const STORAGE_KEYS = {
   REQUESTS: 'iitr_fixit_requests_v1',
   STAFF: 'iitr_fixit_staff_v1',
   ACTIVE_ROLE: 'iitr_fixit_active_role_v1',
   SESSION_USER: 'iitr_fixit_session_user_v1',
+  REGISTERED_STUDENTS: 'iitr_fixit_registered_students_v1',
 };
 
 // Event name for syncing state within same window/tab
@@ -122,9 +124,96 @@ export function saveStoredRole(role: UserRole): void {
   }
 }
 
+export function loadRegisteredStudents(): StudentAccount[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.REGISTERED_STUDENTS);
+    if (!raw) {
+      const initial = [DEFAULT_STUDENT_ACCOUNT];
+      localStorage.setItem(STORAGE_KEYS.REGISTERED_STUDENTS, JSON.stringify(initial));
+      return initial;
+    }
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      const initial = [DEFAULT_STUDENT_ACCOUNT];
+      localStorage.setItem(STORAGE_KEYS.REGISTERED_STUDENTS, JSON.stringify(initial));
+      return initial;
+    }
+    return parsed;
+  } catch (error) {
+    console.error('Failed to load registered students:', error);
+    return [DEFAULT_STUDENT_ACCOUNT];
+  }
+}
+
+export function saveRegisteredStudents(students: StudentAccount[]): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.REGISTERED_STUDENTS, JSON.stringify(students));
+    notifyDataChange();
+  } catch (error) {
+    console.error('Failed to save registered students:', error);
+  }
+}
+
+export function registerStudentAccount(
+  data: Omit<StudentAccount, 'id' | 'role' | 'createdAt'>
+): { success: boolean; error?: string; student?: StudentAccount } {
+  try {
+    const cleanEmail = data.email.trim().toLowerCase();
+    const students = loadRegisteredStudents();
+
+    const existing = students.find(s => s.email.toLowerCase() === cleanEmail);
+    if (existing) {
+      return { 
+        success: false, 
+        error: 'An account with this IIT Roorkee email already exists. Please sign in with your password.' 
+      };
+    }
+
+    const newStudent: StudentAccount = {
+      ...data,
+      id: `user_student_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      role: 'student',
+      email: cleanEmail,
+      createdAt: new Date().toISOString()
+    };
+
+    students.push(newStudent);
+    saveRegisteredStudents(students);
+    return { success: true, student: newStudent };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Registration failed.' };
+  }
+}
+
+export function verifyStudentCredentials(
+  email: string, 
+  password: string
+): { success: boolean; error?: string; student?: StudentAccount } {
+  const cleanEmail = email.trim().toLowerCase();
+  const students = loadRegisteredStudents();
+  const student = students.find(s => s.email.toLowerCase() === cleanEmail);
+
+  if (!student) {
+    return { 
+      success: false, 
+      error: 'No registered resident found with this email. Please click "Sign Up" to register.' 
+    };
+  }
+
+  if (student.password !== password.trim()) {
+    return { 
+      success: false, 
+      error: 'Incorrect password. Please verify and try again.' 
+    };
+  }
+
+  return { success: true, student };
+}
+
 export function resetAllDataToDefault(): void {
   localStorage.setItem(STORAGE_KEYS.REQUESTS, JSON.stringify(INITIAL_REQUESTS));
   localStorage.setItem(STORAGE_KEYS.STAFF, JSON.stringify(INITIAL_STAFF));
+  localStorage.setItem(STORAGE_KEYS.REGISTERED_STUDENTS, JSON.stringify([DEFAULT_STUDENT_ACCOUNT]));
   localStorage.removeItem(STORAGE_KEYS.SESSION_USER);
   localStorage.setItem(STORAGE_KEYS.ACTIVE_ROLE, 'student');
   notifyDataChange();
