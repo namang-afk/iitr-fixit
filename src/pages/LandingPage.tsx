@@ -235,7 +235,7 @@ export const LandingPage: React.FC = () => {
 
             <div className="bg-white p-4 sm:p-5 rounded-2xl border border-stone-200/90 text-center shadow-xs">
               <div className="text-2xl sm:text-3xl font-extrabold text-stone-900 font-display">
-                14 Bhawans
+                {IITR_HOSTELS.length} Bhawans
               </div>
               <p className="text-xs font-semibold text-stone-700 mt-1">Unified Coverage</p>
               <p className="text-[11px] text-stone-500">All UG, PG & Scholars</p>

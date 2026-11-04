@@ -96,7 +96,7 @@ export const INITIAL_REQUESTS: RequestItem[] = [
       {
         id: 'tl_2',
         timestamp: '2026-10-25T16:00:00Z',
-        actorName: 'Dr. P. K. Sen',
+        actorName: 'Ramesh Supervisor',
         actorRole: 'admin',
         action: 'Warden Review Approved',
         fromStatus: 'submitted',
@@ -106,7 +106,7 @@ export const INITIAL_REQUESTS: RequestItem[] = [
       {
         id: 'tl_3',
         timestamp: '2026-10-26T09:30:00Z',
-        actorName: 'Dr. P. K. Sen',
+        actorName: 'Ramesh Supervisor',
         actorRole: 'admin',
         action: 'Technician Assigned',
         fromStatus: 'under_review',
@@ -188,7 +188,7 @@ export const INITIAL_REQUESTS: RequestItem[] = [
       {
         id: 'tl_202',
         timestamp: '2026-10-27T08:45:00Z',
-        actorName: 'Dr. P. K. Sen',
+        actorName: 'Ramesh Supervisor',
         actorRole: 'admin',
         action: 'Fast-Track Assignment',
         fromStatus: 'submitted',
@@ -199,7 +199,7 @@ export const INITIAL_REQUESTS: RequestItem[] = [
     comments: [
       {
         id: 'c_201',
-        authorName: 'Dr. P. K. Sen',
+        authorName: 'Ramesh Supervisor',
         authorRole: 'admin',
         text: 'Emergency priority confirmed. Suresh is en route with plumbing tool kit.',
         createdAt: '2026-10-27T08:46:00Z',
@@ -247,7 +247,7 @@ export const INITIAL_REQUESTS: RequestItem[] = [
       {
         id: 'tl_302',
         timestamp: '2026-10-22T12:00:00Z',
-        actorName: 'Dr. P. K. Sen',
+        actorName: 'Ramesh Supervisor',
         actorRole: 'admin',
         action: 'Assigned to ICC Team',
         fromStatus: 'submitted',
@@ -316,7 +316,7 @@ export const INITIAL_REQUESTS: RequestItem[] = [
       {
         id: 'tl_402',
         timestamp: '2026-10-27T09:00:00Z',
-        actorName: 'Dr. P. K. Sen',
+        actorName: 'Ramesh Supervisor',
         actorRole: 'admin',
         action: 'Warden Verification Underway',
         fromStatus: 'submitted',
@@ -392,7 +392,7 @@ export const INITIAL_REQUESTS: RequestItem[] = [
       {
         id: 'tl_602',
         timestamp: '2026-10-26T14:00:00Z',
-        actorName: 'Dr. P. K. Sen',
+        actorName: 'Ramesh Supervisor',
         actorRole: 'admin',
         action: 'Assigned to Pest Agency Liaison',
         fromStatus: 'submitted',

@@ -155,6 +155,7 @@ export const PRIORITY_META: Record<RequestPriority, { label: string; bg: string;
 
 export const IITR_HOSTELS = [
   { id: 'rajendra', name: 'Rajendra Bhawan', type: 'Boys Hostel', capacity: 750, wings: ['Wing A', 'Wing B', 'Wing C', 'Wing D'] },
+  { id: 'rajiv', name: 'Rajiv Bhawan', type: 'Boys Hostel', capacity: 700, wings: ['Wing A', 'Wing B', 'Wing C', 'Wing D'] },
   { id: 'cautley', name: 'Cautley Bhawan', type: 'Boys Hostel', capacity: 600, wings: ['Block 1', 'Block 2', 'Block 3'] },
   { id: 'ganga', name: 'Ganga Bhawan', type: 'Boys Hostel', capacity: 550, wings: ['East Wing', 'West Wing'] },
   { id: 'govind', name: 'Govind Bhawan', type: 'Boys Hostel', capacity: 620, wings: ['Wing A', 'Wing B', 'Wing C'] },
@@ -199,11 +200,11 @@ export const DEMO_USERS: Record<string, UserProfile> = {
   },
   admin: {
     id: 'user_admin_1',
-    name: 'Dr. P. K. Sen',
+    name: 'Ramesh Supervisor',
     role: 'admin',
     email: 'warden.rajendra@iitr.ac.in',
     phone: '+91 94129 99888',
-    department: 'Council of Wardens / Estate Directorate'
+    department: 'Chief Warden & Estate Supervisor / Directorate'
   }
 };
 

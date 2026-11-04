@@ -229,7 +229,7 @@ export const AdminDashboard: React.FC = () => {
         <div className="bg-white rounded-2xl p-4 sm:p-5 border border-stone-200/90 shadow-2xs space-y-1">
           <span className="text-[11px] font-bold uppercase tracking-wider text-stone-500">Total Logged</span>
           <div className="text-2xl sm:text-3xl font-extrabold text-stone-900 font-display">{totalRequests}</div>
-          <p className="text-[11px] text-stone-500">Across 14 Bhawans</p>
+          <p className="text-[11px] text-stone-500">Across {IITR_HOSTELS.length} Bhawans</p>
         </div>
 
         <div className="bg-white rounded-2xl p-4 sm:p-5 border border-stone-200/90 shadow-2xs space-y-1">

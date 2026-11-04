@@ -76,10 +76,10 @@ export const AUTHORIZED_STAFF_CREDENTIALS: StaffCredential[] = [
 // Exactly 1 Authorized Warden Credential
 export const AUTHORIZED_WARDEN_CREDENTIAL: WardenCredential = {
   id: 'user_admin_1',
-  name: 'Dr. P. K. Sen',
+  name: 'Ramesh Supervisor',
   email: 'warden.rajendra@iitr.ac.in',
   password: 'Warden@IITR2026',
-  department: 'Council of Wardens / Estate Directorate',
+  department: 'Chief Warden & Estate Supervisor / Directorate',
   phone: '+91 94129 99888'
 };
 

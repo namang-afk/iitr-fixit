@@ -7,7 +7,7 @@
 
 ## 🏛️ Overview & Product Vision
 
-In large residential university campuses like IIT Roorkee—with over 14 student bhawans, married scholar residences, and faculty quarters—traditional room maintenance often relied on paper registers, unrecorded verbal complaints, and manual follow-ups with hostel caretakers.
+In large residential university campuses like IIT Roorkee—with over 15 student bhawans (including Rajiv Bhawan), married scholar residences, and faculty quarters—traditional room maintenance often relied on paper registers, unrecorded verbal complaints, and manual follow-ups with hostel caretakers.
 
 **IITR FixIt** transforms campus facility operations into an accountable, transparent university SaaS platform:
 - **Institutional Single Sign-On (SSO)**: Users authenticate using their official IIT Roorkee email address (`@iitr.ac.in` or `@*.iitr.ac.in`).
@@ -141,6 +141,7 @@ Staff access is strictly restricted to these 5 accounts and their generated pass
 
 ### 🏛️ Exactly 1 Generated Warden Account (Chief Warden & Estate Directorate)
 Warden administrative access is strictly restricted to:
+- **Officer Name**: Ramesh Supervisor
 - **Email**: `warden.rajendra@iitr.ac.in`
 - **Password**: `Warden@IITR2026`
 - **Role**: Executive command center, technician reassignments, SLA monitoring, and hostel loads.
