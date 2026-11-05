@@ -60,6 +60,37 @@ export const INITIAL_STAFF: StaffMember[] = [
 
 export const INITIAL_REQUESTS: RequestItem[] = [
   {
+    id: 'FIX-2026-010',
+    title: 'switches in room not working',
+    description: 'they sparkled and stopped working',
+    category: 'electrical',
+    priority: 'normal',
+    status: 'submitted',
+    hostel: 'Rajiv Bhawan',
+    block: 'Wing B',
+    roomNumber: 'B-435',
+    preferredAccessTime: 'afternoon',
+    photos: [],
+    residentId: 'user_student_naman',
+    residentName: 'NAMAN GUPTA',
+    residentEnrollment: '24116059',
+    residentPhone: '+91 98765 00001',
+    residentEmail: 'naman_g@ece.iitr.ac.in',
+    createdAt: '2026-11-05T08:00:00Z',
+    updatedAt: '2026-11-05T08:00:00Z',
+    timeline: [
+      {
+        id: 'tl_naman_10',
+        timestamp: '2026-11-05T08:00:00Z',
+        actorName: 'NAMAN GUPTA',
+        actorRole: 'student',
+        action: 'Request Submitted',
+        note: 'Issue created by resident for Rajiv Bhawan, Room B-435.'
+      }
+    ],
+    comments: []
+  },
+  {
     id: 'FIX-2026-001',
     title: 'Ceiling Fan Regulator Stuck & Motor Humming',
     description: 'The ceiling fan regulator knob is completely stuck at level 5 speed. When switched on, there is a loud vibrating humming noise and strong vibration in the ceiling hook.',
