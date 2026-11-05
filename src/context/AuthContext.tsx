@@ -140,6 +140,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (role === 'student') {
       const result = verifyStudentCredentials(cleanEmail, cleanPassword);
       if (!result.success || !result.student) {
+        // If student is not registered in this browser yet, auto-provision their account with the password they provided
+        if (result.notFound && cleanPassword.length >= 6) {
+          const localPart = cleanEmail.split('@')[0];
+          const autoName = localPart
+            .replace(/[._]/g, ' ')
+            .replace(/\b\w/g, l => l.toUpperCase());
+
+          const subDomain = cleanEmail.includes('.') ? cleanEmail.split('@')[1].split('.')[0] : 'Campus';
+          const deptName = subDomain.length <= 4 ? subDomain.toUpperCase() : 'IIT Roorkee';
+
+          const autoReg = registerStudentAccount({
+            name: autoName,
+            email: cleanEmail,
+            password: cleanPassword,
+            hostel: 'Rajiv Bhawan',
+            room: 'R-101',
+            phone: '+91 98765 00000',
+            department: deptName
+          });
+
+          if (autoReg.success && autoReg.student) {
+            const student = autoReg.student;
+            const profile: UserProfile = {
+              id: student.id,
+              name: student.name,
+              role: 'student',
+              email: student.email,
+              phone: student.phone,
+              hostel: student.hostel,
+              room: student.room,
+              enrollmentNo: student.enrollmentNo,
+              department: student.department
+            };
+            setCurrentUser(profile);
+            saveStoredSession(profile);
+            return { success: true };
+          }
+        }
+
         return { 
           success: false, 
           error: result.error || 'Invalid student credentials. If you have not registered yet, please click Sign Up.' 

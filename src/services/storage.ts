@@ -1,6 +1,6 @@
 import { RequestItem, StaffMember, UserProfile, UserRole } from '../types';
 import { INITIAL_REQUESTS, INITIAL_STAFF } from './seedData';
-import { StudentAccount, DEFAULT_STUDENT_ACCOUNT } from '../constants/authCredentials';
+import { StudentAccount, DEFAULT_STUDENT_ACCOUNT, DEFAULT_STUDENT_ACCOUNTS } from '../constants/authCredentials';
 
 const STORAGE_KEYS = {
   REQUESTS: 'iitr_fixit_requests_v1',
@@ -127,21 +127,35 @@ export function saveStoredRole(role: UserRole): void {
 export function loadRegisteredStudents(): StudentAccount[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.REGISTERED_STUDENTS);
-    if (!raw) {
-      const initial = [DEFAULT_STUDENT_ACCOUNT];
-      localStorage.setItem(STORAGE_KEYS.REGISTERED_STUDENTS, JSON.stringify(initial));
-      return initial;
+    let list: StudentAccount[] = [];
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          list = parsed;
+        }
+      } catch {
+        list = [];
+      }
     }
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed) || parsed.length === 0) {
-      const initial = [DEFAULT_STUDENT_ACCOUNT];
-      localStorage.setItem(STORAGE_KEYS.REGISTERED_STUDENTS, JSON.stringify(initial));
-      return initial;
+
+    // Always ensure default student accounts (Naman Gupta, Muntazir, Manikanta, Aarav Sharma) are loaded across all browsers
+    let modified = false;
+    for (const def of DEFAULT_STUDENT_ACCOUNTS) {
+      const exists = list.some(s => s.email.toLowerCase() === def.email.toLowerCase());
+      if (!exists) {
+        list.push(def);
+        modified = true;
+      }
     }
-    return parsed;
+
+    if (modified || !raw) {
+      localStorage.setItem(STORAGE_KEYS.REGISTERED_STUDENTS, JSON.stringify(list));
+    }
+    return list;
   } catch (error) {
     console.error('Failed to load registered students:', error);
-    return [DEFAULT_STUDENT_ACCOUNT];
+    return DEFAULT_STUDENT_ACCOUNTS;
   }
 }
 
@@ -192,7 +206,7 @@ export function registerStudentAccount(
 export function verifyStudentCredentials(
   email: string, 
   password: string
-): { success: boolean; error?: string; student?: StudentAccount } {
+): { success: boolean; error?: string; student?: StudentAccount; notFound?: boolean } {
   const cleanEmail = email.trim().toLowerCase();
   const students = loadRegisteredStudents();
   const student = students.find(s => s.email.toLowerCase() === cleanEmail);
@@ -200,6 +214,7 @@ export function verifyStudentCredentials(
   if (!student) {
     return { 
       success: false, 
+      notFound: true,
       error: 'No registered resident found with this email. Please click "Sign Up" to register.' 
     };
   }
@@ -207,7 +222,7 @@ export function verifyStudentCredentials(
   if (student.password !== password.trim()) {
     return { 
       success: false, 
-      error: 'Incorrect password. Please verify and try again.' 
+      error: 'Incorrect password. Please verify and try again, or sign up with a new password to reset it.' 
     };
   }
 
@@ -217,7 +232,7 @@ export function verifyStudentCredentials(
 export function resetAllDataToDefault(): void {
   localStorage.setItem(STORAGE_KEYS.REQUESTS, JSON.stringify(INITIAL_REQUESTS));
   localStorage.setItem(STORAGE_KEYS.STAFF, JSON.stringify(INITIAL_STAFF));
-  localStorage.setItem(STORAGE_KEYS.REGISTERED_STUDENTS, JSON.stringify([DEFAULT_STUDENT_ACCOUNT]));
+  localStorage.setItem(STORAGE_KEYS.REGISTERED_STUDENTS, JSON.stringify(DEFAULT_STUDENT_ACCOUNTS));
   localStorage.removeItem(STORAGE_KEYS.SESSION_USER);
   localStorage.setItem(STORAGE_KEYS.ACTIVE_ROLE, 'student');
   notifyDataChange();

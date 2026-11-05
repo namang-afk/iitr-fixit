@@ -83,20 +83,63 @@ export const AUTHORIZED_WARDEN_CREDENTIAL: WardenCredential = {
   phone: '+91 94129 99888'
 };
 
-// Default seed student account (allows testing existing sample tickets)
-export const DEFAULT_STUDENT_ACCOUNT: StudentAccount = {
-  id: 'user_student_1',
-  name: 'Aarav Sharma',
-  role: 'student',
-  email: 'aarav.sharma@me.iitr.ac.in',
-  password: 'Student@IITR1',
-  phone: '+91 98765 43210',
-  hostel: 'Rajendra Bhawan',
-  room: 'R-314',
-  enrollmentNo: '22115042',
-  department: 'Mechanical & Industrial Engineering',
-  createdAt: '2026-01-01T00:00:00.000Z'
-};
+// Default seed student accounts (preloaded on all devices and browsers)
+export const DEFAULT_STUDENT_ACCOUNTS: StudentAccount[] = [
+  {
+    id: 'user_student_naman',
+    name: 'Naman Gupta',
+    role: 'student',
+    email: 'naman_g@ece.iitr.ac.in',
+    password: 'Student@IITR2026',
+    phone: '+91 98765 00001',
+    hostel: 'Rajiv Bhawan',
+    room: 'B-435',
+    enrollmentNo: '24116059',
+    department: 'Electronics & Communication Engineering',
+    createdAt: '2026-01-01T00:00:00.000Z'
+  },
+  {
+    id: 'user_student_muntazir',
+    name: 'Muntazir',
+    role: 'student',
+    email: 'muntazir@ece.iitr.ac.in',
+    password: 'Student@IITR2026',
+    phone: '+91 98765 00002',
+    hostel: 'Rajiv Bhawan',
+    room: 'B-436',
+    enrollmentNo: '24116057',
+    department: 'Electronics & Communication Engineering',
+    createdAt: '2026-01-01T00:00:00.000Z'
+  },
+  {
+    id: 'user_student_manikanta',
+    name: 'Manikanta',
+    role: 'student',
+    email: 'manikanta@ece.iitr.ac.in',
+    password: 'Student@IITR2026',
+    phone: '+91 98765 00003',
+    hostel: 'Rajiv Bhawan',
+    room: 'B-437',
+    enrollmentNo: '24116058',
+    department: 'Electronics & Communication Engineering',
+    createdAt: '2026-01-01T00:00:00.000Z'
+  },
+  {
+    id: 'user_student_1',
+    name: 'Aarav Sharma',
+    role: 'student',
+    email: 'aarav.sharma@me.iitr.ac.in',
+    password: 'Student@IITR1',
+    phone: '+91 98765 43210',
+    hostel: 'Rajendra Bhawan',
+    room: 'R-314',
+    enrollmentNo: '22115042',
+    department: 'Mechanical & Industrial Engineering',
+    createdAt: '2026-01-01T00:00:00.000Z'
+  }
+];
+
+export const DEFAULT_STUDENT_ACCOUNT: StudentAccount = DEFAULT_STUDENT_ACCOUNTS[0];
 
 // Staff validation helper
 export function verifyStaffCredentials(email: string, password: string): StaffCredential | null {
