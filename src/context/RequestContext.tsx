@@ -181,9 +181,10 @@ export const RequestProvider: React.FC<{ children: React.ReactNode }> = ({ child
       requests, 
       filters, 
       currentRole || 'student', 
-      currentUser?.id || ''
+      currentUser?.id || '',
+      currentUser?.email
     );
-  }, [requests, currentRole, currentUser?.id]);
+  }, [requests, currentRole, currentUser?.id, currentUser?.email]);
 
   return (
     <RequestContext.Provider

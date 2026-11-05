@@ -20,8 +20,11 @@ export const StudentDashboard: React.FC = () => {
   const { currentUser } = useAuth();
   const { requests } = useRequests();
 
-  // Student's personal requests
-  const myRequests = requests.filter(r => r.residentId === (currentUser?.id || ''));
+  // Student's personal requests (matches either residentId or residentEmail for seamless persistence)
+  const myRequests = requests.filter(r => 
+    r.residentId === (currentUser?.id || '') ||
+    (Boolean(currentUser?.email) && r.residentEmail?.toLowerCase() === currentUser?.email?.toLowerCase())
+  );
 
   const openCount = myRequests.filter(r => r.status === 'submitted' || r.status === 'under_review').length;
   const inProgressCount = myRequests.filter(r => r.status === 'assigned' || r.status === 'in_progress').length;

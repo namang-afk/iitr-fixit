@@ -239,9 +239,25 @@ export const LoginPage: React.FC = () => {
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-md space-y-6">
           {/* Error Banner */}
           {errorMessage && (
-            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 flex items-start gap-2.5 animate-in fade-in duration-200">
-              <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
-              <div className="leading-relaxed font-medium">{errorMessage}</div>
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 space-y-2 animate-in fade-in duration-200">
+              <div className="flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
+                <div className="leading-relaxed font-medium">{errorMessage}</div>
+              </div>
+              {authMode === 'signin' && selectedRole === 'student' && (errorMessage.includes('Sign Up') || errorMessage.includes('register')) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (email) setSignupEmail(email);
+                    setAuthMode('signup');
+                    setErrorMessage('');
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#7A1528] text-white font-bold rounded-lg hover:bg-[#601020] transition-colors shadow-2xs"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span>Click here to Sign Up as Student</span>
+                </button>
+              )}
             </div>
           )}
 

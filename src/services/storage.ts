@@ -161,12 +161,16 @@ export function registerStudentAccount(
     const cleanEmail = data.email.trim().toLowerCase();
     const students = loadRegisteredStudents();
 
-    const existing = students.find(s => s.email.toLowerCase() === cleanEmail);
-    if (existing) {
-      return { 
-        success: false, 
-        error: 'An account with this IIT Roorkee email already exists. Please sign in with your password.' 
+    const existingIndex = students.findIndex(s => s.email.toLowerCase() === cleanEmail);
+    if (existingIndex !== -1) {
+      // If student already exists, update their record and password so they are never locked out
+      students[existingIndex] = {
+        ...students[existingIndex],
+        ...data,
+        email: cleanEmail
       };
+      saveRegisteredStudents(students);
+      return { success: true, student: students[existingIndex] };
     }
 
     const newStudent: StudentAccount = {

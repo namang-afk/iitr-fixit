@@ -313,7 +313,7 @@ export const requestService = {
   },
 
   // Filter and sort requests
-  filterRequests(requests: RequestItem[], filters: FilterOptions, currentRole: UserRole, currentUserId: string): RequestItem[] {
+  filterRequests(requests: RequestItem[], filters: FilterOptions, currentRole: UserRole, currentUserId: string, currentUserEmail?: string): RequestItem[] {
     return requests.filter(item => {
       // Role scope: if student and "assignedToMe", not applicable, but students can view all their requests or all campus requests
       if (filters.assignedToMe) {
@@ -323,8 +323,10 @@ export const requestService = {
           const me = staffList[0]; // demo staff Rajesh Kumar
           if (item.assignedStaffId !== me.id) return false;
         } else if (currentRole === 'student') {
-          // For student, assignedToMe means submitted by me
-          if (item.residentId !== currentUserId) return false;
+          // For student, assignedToMe means submitted by me (checks ID or matching student email)
+          const matchesId = item.residentId === currentUserId;
+          const matchesEmail = Boolean(currentUserEmail && item.residentEmail?.toLowerCase() === currentUserEmail.toLowerCase());
+          if (!matchesId && !matchesEmail) return false;
         }
       }
 
